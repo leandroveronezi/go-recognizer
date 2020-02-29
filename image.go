@@ -15,6 +15,9 @@ import (
 	"path/filepath"
 )
 
+/*
+Load an image from file
+*/
 func (_this *Recognizer) LoadImage(Path string) (error, image.Image) {
 
 	existingImageFile, err := os.Open(Path)
@@ -32,6 +35,9 @@ func (_this *Recognizer) LoadImage(Path string) (error, image.Image) {
 
 }
 
+/*
+Save an image to jpeg file
+*/
 func (_this *Recognizer) SaveImage(Path string, Img image.Image) error {
 
 	outputFile, err := os.Create(Path)
@@ -49,15 +55,21 @@ func (_this *Recognizer) SaveImage(Path string, Img image.Image) error {
 
 }
 
+/*
+Convert an image to grayscale
+*/
 func (_this *Recognizer) GrayScale(imgSrc image.Image) image.Image {
 
 	return imaging.Grayscale(imgSrc)
 
 }
 
+/*
+create a temporary image in grayscale
+*/
 func (_this *Recognizer) createTempGrayFile(Path, Id string) (error, string) {
 
-	name := _this.TempFileName(Id, ".jpeg")
+	name := _this.tempFileName(Id, ".jpeg")
 
 	err, img := _this.LoadImage(Path)
 
@@ -76,13 +88,16 @@ func (_this *Recognizer) createTempGrayFile(Path, Id string) (error, string) {
 
 }
 
-// TempFileName generates a temporary filename for use in testing or whatever
-func (_this *Recognizer) TempFileName(prefix, suffix string) string {
+// tempFileName generates a temporary filename
+func (_this *Recognizer) tempFileName(prefix, suffix string) string {
 	randBytes := make([]byte, 16)
 	rand.Read(randBytes)
 	return filepath.Join(os.TempDir(), prefix+hex.EncodeToString(randBytes)+suffix)
 }
 
+/*
+Draws the faces identified in the original image
+*/
 func (_this *Recognizer) DrawFaces(Path string, F []Face) (error, image.Image) {
 
 	err, img := _this.LoadImage(Path)
@@ -103,7 +118,7 @@ func (_this *Recognizer) DrawFaces(Path string, F []Face) (error, image.Image) {
 
 	for _, f := range F {
 
-		dc.SetRGB255(50, 168, 82)
+		dc.SetRGB255(0, 0, 255)
 
 		x := float64(f.Rectangle.Min.X)
 		y := float64(f.Rectangle.Min.Y)

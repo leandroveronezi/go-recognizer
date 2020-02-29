@@ -31,6 +31,8 @@ func main() {
 	}
 
 	rec.Tolerance = 0.4
+	rec.UseGray = true
+	rec.UseCNN = false
 	defer rec.Close()
 
 	addFile(&rec, filepath.Join(fotosDir, "amy.jpg"), "Amy")
@@ -53,8 +55,7 @@ func main() {
 	err, img := rec.DrawFaces(filepath.Join(fotosDir, "elenco3.jpg"), faces)
 
 	if err == nil {
-		//img = rec.GrayScale(img)
-		rec.SaveImage("teste.jpeg", img)
+		rec.SaveImage("faces.jpeg", img)
 	}
 
 }

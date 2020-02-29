@@ -110,7 +110,7 @@ func (_this *Recognizer) LoadSamples() {
 
 }
 
-func (_this *Recognizer) Classify(Path string) (error, Data, []Face) {
+func (_this *Recognizer) RecognizeSingle(Path string) (error, face.Face) {
 
 	file := Path
 	var err error
@@ -120,27 +120,72 @@ func (_this *Recognizer) Classify(Path string) (error, Data, []Face) {
 		err, file = _this.createTempGrayFile(file, "64ab59ac42d69274f06eadb11348969e")
 
 		if err != nil {
-			return err, Data{}, nil
+			return err, face.Face{}
 		}
 
 		defer os.Remove(file)
 
 	}
 
-	var face *face.Face
+	var idFace *face.Face
 
 	if _this.UseCNN {
-		face, err = _this.rec.RecognizeSingleFileCNN(file)
+		idFace, err = _this.rec.RecognizeSingleFileCNN(file)
 	} else {
-		face, err = _this.rec.RecognizeSingleFile(file)
+		idFace, err = _this.rec.RecognizeSingleFile(file)
 	}
 
 	if err != nil {
-		return fmt.Errorf("Can't recognize: %v", err), Data{}, nil
+		return fmt.Errorf("Can't recognize: %v", err), face.Face{}
 
 	}
-	if face == nil {
-		return fmt.Errorf("Not a single face on the image"), Data{}, nil
+	if idFace == nil {
+		return fmt.Errorf("Not a single face on the image"), face.Face{}
+	}
+
+	return nil, *idFace
+
+}
+
+func (_this *Recognizer) RecognizeMultiples(Path string) (error, []face.Face) {
+
+	file := Path
+	var err error
+
+	if _this.UseGray {
+
+		err, file = _this.createTempGrayFile(file, "64ab59ac42d69274f06eadb11348969e")
+
+		if err != nil {
+			return err, nil
+		}
+
+		defer os.Remove(file)
+
+	}
+
+	var idFaces []face.Face
+
+	if _this.UseCNN {
+		idFaces, err = _this.rec.RecognizeFileCNN(file)
+	} else {
+		idFaces, err = _this.rec.RecognizeFile(file)
+	}
+
+	if err != nil {
+		return fmt.Errorf("Can't recognize: %v", err), nil
+	}
+
+	return nil, idFaces
+
+}
+
+func (_this *Recognizer) Classify(Path string) (error, Data, []Face) {
+
+	err, face := _this.RecognizeSingle(Path)
+
+	if err != nil {
+		return err, Data{}, nil
 	}
 
 	personID := _this.rec.ClassifyThreshold(face.Descriptor, _this.Tolerance)
@@ -158,28 +203,7 @@ func (_this *Recognizer) Classify(Path string) (error, Data, []Face) {
 
 func (_this *Recognizer) ClassifyMultiples(Path string) (error, []Data, []Face) {
 
-	file := Path
-	var err error
-
-	if _this.UseGray {
-
-		err, file = _this.createTempGrayFile(file, "64ab59ac42d69274f06eadb11348969e")
-
-		if err != nil {
-			return err, nil, nil
-		}
-
-		defer os.Remove(file)
-
-	}
-
-	var faces []face.Face
-
-	if _this.UseCNN {
-		faces, err = _this.rec.RecognizeFileCNN(file)
-	} else {
-		faces, err = _this.rec.RecognizeFileCNN(file)
-	}
+	err, faces := _this.RecognizeMultiples(Path)
 
 	if err != nil {
 		return fmt.Errorf("Can't recognize: %v", err), nil, nil

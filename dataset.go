@@ -7,6 +7,9 @@ import (
 	"os"
 )
 
+/*
+Save Dataset to json file
+*/
 func (_this *Recognizer) SaveDataset(Path string) error {
 
 	data, err := jsonMarshal(_this.Dataset)
@@ -19,6 +22,9 @@ func (_this *Recognizer) SaveDataset(Path string) error {
 
 }
 
+/*
+Load Dataset from json file
+*/
 func (_this *Recognizer) LoadDataset(Path string) error {
 
 	if !fileExists(Path) {
