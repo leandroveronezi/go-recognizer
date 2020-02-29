@@ -43,7 +43,7 @@ func main() {
 	addFile(&rec, filepath.Join(fotosDir, "sheldon.jpg"), "Sheldon")
 	addFile(&rec, filepath.Join(fotosDir, "leonard.jpg"), "Leonard")
 
-	rec.LoadSamples()
+	rec.SetSamples()
 
 	err, _, faces := rec.ClassifyMultiples(filepath.Join(fotosDir, "elenco3.jpg"))
 

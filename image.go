@@ -18,20 +18,20 @@ import (
 /*
 Load an image from file
 */
-func (_this *Recognizer) LoadImage(Path string) (error, image.Image) {
+func (_this *Recognizer) LoadImage(Path string) (image.Image, error) {
 
 	existingImageFile, err := os.Open(Path)
 	if err != nil {
-		return err, nil
+		return nil, err
 	}
 	defer existingImageFile.Close()
 
 	imageData, _, err := image.Decode(existingImageFile)
 	if err != nil {
-		return err, nil
+		return nil, err
 	}
 
-	return nil, imageData
+	return imageData, nil
 
 }
 
@@ -67,24 +67,24 @@ func (_this *Recognizer) GrayScale(imgSrc image.Image) image.Image {
 /*
 create a temporary image in grayscale
 */
-func (_this *Recognizer) createTempGrayFile(Path, Id string) (error, string) {
+func (_this *Recognizer) createTempGrayFile(Path, Id string) (string, error) {
 
 	name := _this.tempFileName(Id, ".jpeg")
 
-	err, img := _this.LoadImage(Path)
+	img, err := _this.LoadImage(Path)
 
 	if err != nil {
-		return err, ""
+		return "", err
 	}
 
 	img = _this.GrayScale(img)
 	err = _this.SaveImage(name, img)
 
 	if err != nil {
-		return err, ""
+		return "", err
 	}
 
-	return nil, name
+	return name, nil
 
 }
 
@@ -98,17 +98,17 @@ func (_this *Recognizer) tempFileName(prefix, suffix string) string {
 /*
 Draws the faces identified in the original image
 */
-func (_this *Recognizer) DrawFaces(Path string, F []Face) (error, image.Image) {
+func (_this *Recognizer) DrawFaces(Path string, F []Face) (image.Image, error) {
 
-	err, img := _this.LoadImage(Path)
+	img, err := _this.LoadImage(Path)
 
 	if err != nil {
-		return err, nil
+		return nil, err
 	}
 
 	font, err := truetype.Parse(goregular.TTF)
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 
 	face := truetype.NewFace(font, &truetype.Options{Size: 24})
@@ -136,6 +136,6 @@ func (_this *Recognizer) DrawFaces(Path string, F []Face) (error, image.Image) {
 
 	img = dc.Image()
 
-	return nil, img
+	return img, nil
 
 }

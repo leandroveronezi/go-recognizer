@@ -60,6 +60,9 @@ func (_this *Recognizer) Close() {
 
 }
 
+/*
+Add a sample image to the dataset
+*/
 func (_this *Recognizer) AddImageToDataset(Path string, Id string) error {
 
 	file := Path
@@ -67,7 +70,7 @@ func (_this *Recognizer) AddImageToDataset(Path string, Id string) error {
 
 	if _this.UseGray {
 
-		err, file = _this.createTempGrayFile(file, Id)
+		file, err = _this.createTempGrayFile(file, Id)
 
 		if err != nil {
 			return err
@@ -105,7 +108,6 @@ func (_this *Recognizer) AddImageToDataset(Path string, Id string) error {
 
 /*
 SetSamples sets known descriptors so you can classify the new ones.
-Thread-safe.
 */
 func (_this *Recognizer) SetSamples() {
 
@@ -121,17 +123,21 @@ func (_this *Recognizer) SetSamples() {
 
 }
 
-func (_this *Recognizer) RecognizeSingle(Path string) (error, face.Face) {
+/*
+RecognizeSingle returns face if it's the only face on the image or nil otherwise.
+Only JPEG format is currently supported.
+*/
+func (_this *Recognizer) RecognizeSingle(Path string) (face.Face, error) {
 
 	file := Path
 	var err error
 
 	if _this.UseGray {
 
-		err, file = _this.createTempGrayFile(file, "64ab59ac42d69274f06eadb11348969e")
+		file, err = _this.createTempGrayFile(file, "64ab59ac42d69274f06eadb11348969e")
 
 		if err != nil {
-			return err, face.Face{}
+			return face.Face{}, err
 		}
 
 		defer os.Remove(file)
@@ -147,28 +153,34 @@ func (_this *Recognizer) RecognizeSingle(Path string) (error, face.Face) {
 	}
 
 	if err != nil {
-		return fmt.Errorf("Can't recognize: %v", err), face.Face{}
+		return face.Face{}, fmt.Errorf("Can't recognize: %v", err)
 
 	}
 	if idFace == nil {
-		return fmt.Errorf("Not a single face on the image"), face.Face{}
+		return face.Face{}, fmt.Errorf("Not a single face on the image")
 	}
 
-	return nil, *idFace
+	return *idFace, nil
 
 }
 
-func (_this *Recognizer) RecognizeMultiples(Path string) (error, []face.Face) {
+/*
+Recognize returns all faces found on the provided image, sorted from
+left to right. Empty list is returned if there are no faces, error is
+returned if there was some error while decoding/processing image.
+Only JPEG format is currently supported.
+*/
+func (_this *Recognizer) RecognizeMultiples(Path string) ([]face.Face, error) {
 
 	file := Path
 	var err error
 
 	if _this.UseGray {
 
-		err, file = _this.createTempGrayFile(file, "64ab59ac42d69274f06eadb11348969e")
+		file, err = _this.createTempGrayFile(file, "64ab59ac42d69274f06eadb11348969e")
 
 		if err != nil {
-			return err, nil
+			return nil, err
 		}
 
 		defer os.Remove(file)
@@ -184,43 +196,49 @@ func (_this *Recognizer) RecognizeMultiples(Path string) (error, []face.Face) {
 	}
 
 	if err != nil {
-		return fmt.Errorf("Can't recognize: %v", err), nil
+		return nil, fmt.Errorf("Can't recognize: %v", err)
 	}
 
-	return nil, idFaces
+	return idFaces, nil
 
 }
 
-func (_this *Recognizer) Classify(Path string) (error, Data, []Face) {
+/*
+Classify returns class ID for the given descriptor. Negative index is
+returned if no match. Thread-safe.
+*/
+func (_this *Recognizer) Classify(Path string) ([]Face, error) {
 
-	err, face := _this.RecognizeSingle(Path)
+	face, err := _this.RecognizeSingle(Path)
 
 	if err != nil {
-		return err, Data{}, nil
+		return nil, err
 	}
 
 	personID := _this.rec.ClassifyThreshold(face.Descriptor, _this.Tolerance)
 	if personID < 0 {
-		return fmt.Errorf("Can't classify"), Data{}, nil
+		return nil, fmt.Errorf("Can't classify")
 	}
 
 	facesRec := make([]Face, 0)
 	aux := Face{Data: _this.Dataset[personID], Rectangle: face.Rectangle}
 	facesRec = append(facesRec, aux)
 
-	return nil, _this.Dataset[personID], facesRec
+	return facesRec, nil
 
 }
 
-func (_this *Recognizer) ClassifyMultiples(Path string) (error, []Data, []Face) {
+/*
+Classify returns class ID for the given descriptor. Negative index is
+returned if no match. Thread-safe.
+*/
+func (_this *Recognizer) ClassifyMultiples(Path string) ([]Face, error) {
 
-	err, faces := _this.RecognizeMultiples(Path)
+	faces, err := _this.RecognizeMultiples(Path)
 
 	if err != nil {
-		return fmt.Errorf("Can't recognize: %v", err), nil, nil
+		return nil, fmt.Errorf("Can't recognize: %v", err)
 	}
-
-	people := make([]Data, 0)
 
 	facesRec := make([]Face, 0)
 
@@ -231,23 +249,27 @@ func (_this *Recognizer) ClassifyMultiples(Path string) (error, []Data, []Face) 
 			continue
 		}
 
-		people = append(people, _this.Dataset[personID])
-
 		aux := Face{Data: _this.Dataset[personID], Rectangle: f.Rectangle}
 
 		facesRec = append(facesRec, aux)
 
 	}
 
-	return nil, people, facesRec
+	return facesRec, nil
 
 }
 
+/*
+check se file exist
+*/
 func fileExists(FileName string) bool {
 	file, err := os.Stat(FileName)
 	return (err == nil) && !file.IsDir()
 }
 
+/*
+Marshal interface to array of byte
+*/
 func jsonMarshal(t interface{}) ([]byte, error) {
 	buffer := &bytes.Buffer{}
 	encoder := json.NewEncoder(buffer)
