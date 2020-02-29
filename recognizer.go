@@ -29,6 +29,9 @@ type Recognizer struct {
 	Dataset   []Data
 }
 
+/*
+Init initialise a recognizer interface.
+*/
 func (_this *Recognizer) Init(Path string) error {
 
 	_this.Tolerance = 0.4
@@ -47,6 +50,10 @@ func (_this *Recognizer) Init(Path string) error {
 
 }
 
+/*
+Close frees resources taken by the Recognizer. Safe to call multiple
+times. Don't use Recognizer after close call.
+*/
 func (_this *Recognizer) Close() {
 
 	_this.rec.Close()
@@ -96,7 +103,11 @@ func (_this *Recognizer) AddImageToDataset(Path string, Id string) error {
 
 }
 
-func (_this *Recognizer) LoadSamples() {
+/*
+SetSamples sets known descriptors so you can classify the new ones.
+Thread-safe.
+*/
+func (_this *Recognizer) SetSamples() {
 
 	var samples []face.Descriptor
 	var avengers []int32
