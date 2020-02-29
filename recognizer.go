@@ -11,16 +11,22 @@ import (
 	"os"
 )
 
+// Face descriptor of the human face.
 type Data struct {
 	Id         string
 	Descriptor face.Descriptor
 }
 
+// Face holds coordinates and descriptor of the human face.
 type Face struct {
 	Data
 	Rectangle image.Rectangle
 }
 
+/*
+A Recognizer creates face descriptors for provided images and
+classifies them into categories.
+*/
 type Recognizer struct {
 	Tolerance float32
 	rec       *face.Recognizer

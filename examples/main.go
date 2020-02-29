@@ -45,14 +45,14 @@ func main() {
 
 	rec.SetSamples()
 
-	err, _, faces := rec.ClassifyMultiples(filepath.Join(fotosDir, "elenco3.jpg"))
+	faces, err := rec.ClassifyMultiples(filepath.Join(fotosDir, "elenco3.jpg"))
 
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 
-	err, img := rec.DrawFaces(filepath.Join(fotosDir, "elenco3.jpg"), faces)
+	img, err := rec.DrawFaces(filepath.Join(fotosDir, "elenco3.jpg"), faces)
 
 	if err == nil {
 		rec.SaveImage("faces.jpeg", img)

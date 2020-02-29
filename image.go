@@ -3,6 +3,7 @@ package recognizer
 import (
 	"crypto/rand"
 	"encoding/hex"
+	"github.com/Kagami/go-face"
 	"github.com/disintegration/imaging"
 	"github.com/fogleman/gg"
 	"github.com/golang/freetype/truetype"
@@ -10,7 +11,6 @@ import (
 	"image"
 	"image/color"
 	"image/jpeg"
-	"log"
 	"os"
 	"path/filepath"
 )
@@ -137,5 +137,26 @@ func (_this *Recognizer) DrawFaces(Path string, F []Face) (image.Image, error) {
 	img = dc.Image()
 
 	return img, nil
+
+}
+
+/*
+Draws the faces in the original image
+*/
+func (_this *Recognizer) DrawFaces2(Path string, F []face.Face) (image.Image, error) {
+
+	aux := make([]Face, 0)
+
+	for _, f := range F {
+
+		auxFace := Face{}
+		auxFace.Rectangle = f.Rectangle
+		auxFace.Descriptor = f.Descriptor
+
+		aux = append(aux, auxFace)
+
+	}
+
+	return _this.DrawFaces(Path, aux)
 
 }
