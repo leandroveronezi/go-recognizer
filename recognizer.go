@@ -7,11 +7,10 @@ import (
 	"fmt"
 	"github.com/Kagami/go-face"
 	"image"
-	_ "image/jpeg"
 	"os"
 )
 
-// Face descriptor of the human face.
+// Data descriptor of the human face.
 type Data struct {
 	Id         string
 	Descriptor face.Descriptor
@@ -67,7 +66,7 @@ func (_this *Recognizer) Close() {
 }
 
 /*
-Add a sample image to the dataset
+AddImageToDataset add a sample image to the dataset
 */
 func (_this *Recognizer) AddImageToDataset(Path string, Id string) error {
 
@@ -171,7 +170,7 @@ func (_this *Recognizer) RecognizeSingle(Path string) (face.Face, error) {
 }
 
 /*
-Recognize returns all faces found on the provided image, sorted from
+RecognizeMultiples returns all faces found on the provided image, sorted from
 left to right. Empty list is returned if there are no faces, error is
 returned if there was some error while decoding/processing image.
 Only JPEG format is currently supported.
@@ -210,8 +209,7 @@ func (_this *Recognizer) RecognizeMultiples(Path string) ([]face.Face, error) {
 }
 
 /*
-Classify returns class ID for the given descriptor. Negative index is
-returned if no match. Thread-safe.
+Classify returns all faces identified in the image. Empty list is returned if no match.
 */
 func (_this *Recognizer) Classify(Path string) ([]Face, error) {
 
@@ -235,8 +233,7 @@ func (_this *Recognizer) Classify(Path string) ([]Face, error) {
 }
 
 /*
-Classify returns class ID for the given descriptor. Negative index is
-returned if no match. Thread-safe.
+ClassifyMultiples returns all faces identified in the image. Empty list is returned if no match.
 */
 func (_this *Recognizer) ClassifyMultiples(Path string) ([]Face, error) {
 
@@ -266,7 +263,7 @@ func (_this *Recognizer) ClassifyMultiples(Path string) ([]Face, error) {
 }
 
 /*
-check se file exist
+fileExists check se file exist
 */
 func fileExists(FileName string) bool {
 	file, err := os.Stat(FileName)
@@ -274,7 +271,7 @@ func fileExists(FileName string) bool {
 }
 
 /*
-Marshal interface to array of byte
+jsonMarshal Marshal interface to array of byte
 */
 func jsonMarshal(t interface{}) ([]byte, error) {
 	buffer := &bytes.Buffer{}

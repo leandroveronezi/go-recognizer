@@ -16,7 +16,7 @@ import (
 )
 
 /*
-Load an image from file
+LoadImage Load an image from file
 */
 func (_this *Recognizer) LoadImage(Path string) (image.Image, error) {
 
@@ -36,7 +36,7 @@ func (_this *Recognizer) LoadImage(Path string) (image.Image, error) {
 }
 
 /*
-Save an image to jpeg file
+SaveImage Save an image to jpeg file
 */
 func (_this *Recognizer) SaveImage(Path string, Img image.Image) error {
 
@@ -56,7 +56,7 @@ func (_this *Recognizer) SaveImage(Path string, Img image.Image) error {
 }
 
 /*
-Convert an image to grayscale
+GrayScale Convert an image to grayscale
 */
 func (_this *Recognizer) GrayScale(imgSrc image.Image) image.Image {
 
@@ -65,7 +65,7 @@ func (_this *Recognizer) GrayScale(imgSrc image.Image) image.Image {
 }
 
 /*
-create a temporary image in grayscale
+createTempGrayFile create a temporary image in grayscale
 */
 func (_this *Recognizer) createTempGrayFile(Path, Id string) (string, error) {
 
@@ -96,7 +96,7 @@ func (_this *Recognizer) tempFileName(prefix, suffix string) string {
 }
 
 /*
-Draws the faces identified in the original image
+DrawFaces draws the faces identified in the original image
 */
 func (_this *Recognizer) DrawFaces(Path string, F []Face) (image.Image, error) {
 
@@ -141,7 +141,7 @@ func (_this *Recognizer) DrawFaces(Path string, F []Face) (image.Image, error) {
 }
 
 /*
-Draws the faces in the original image
+DrawFaces2 draws the faces in the original image
 */
 func (_this *Recognizer) DrawFaces2(Path string, F []face.Face) (image.Image, error) {
 

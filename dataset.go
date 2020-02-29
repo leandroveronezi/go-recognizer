@@ -8,7 +8,7 @@ import (
 )
 
 /*
-Save Dataset to json file
+SaveDataset saves Dataset data to a json file
 */
 func (_this *Recognizer) SaveDataset(Path string) error {
 
@@ -23,7 +23,7 @@ func (_this *Recognizer) SaveDataset(Path string) error {
 }
 
 /*
-Load Dataset from json file
+LoadDataset loads the data from the json file into the Dataset
 */
 func (_this *Recognizer) LoadDataset(Path string) error {
 
