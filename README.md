@@ -13,13 +13,13 @@ For install details see [go-face](https://github.com/Kagami/go-face) documentati
 
 ## Usage
 
-To use go-face in your Go code:
+To use go-recognizer in your Go code:
 
 ```go
 import "github.com/leandroveronezi/go-recognizer"
 ```
 
-To install go-face in your $GOPATH:
+To install go-recognizer in your $GOPATH:
 
 ```bash
 go get github.com/leandroveronezi/go-recognizer
