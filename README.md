@@ -73,7 +73,7 @@ func main() {
 }
 ```
 
-![](https://leandroveronezi.github.io/go-recognizer/example/faces2.jpg)
+![](https://leandroveronezi.github.io/go-recognizer/examples/faces2.jpg)
 
 
 
@@ -150,4 +150,4 @@ func main() {
 
 ```
 
-![](https://leandroveronezi.github.io/go-recognizer/example/faces.jpg)
+![](https://leandroveronezi.github.io/go-recognizer/examples/faces.jpg)
