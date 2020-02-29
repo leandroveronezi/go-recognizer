@@ -103,7 +103,7 @@ func (_this *Recognizer) DrawFaces(Path string, F []Face) (error, image.Image) {
 
 	for _, f := range F {
 
-		dc.SetRGB255(255, 0, 0)
+		dc.SetRGB255(50, 168, 82)
 
 		x := float64(f.Rectangle.Min.X)
 		y := float64(f.Rectangle.Min.Y)

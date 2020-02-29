@@ -8,7 +8,6 @@ import (
 	"github.com/Kagami/go-face"
 	"image"
 	_ "image/jpeg"
-	"io/ioutil"
 	"os"
 )
 
@@ -28,41 +27,6 @@ type Recognizer struct {
 	UseCNN    bool
 	UseGray   bool
 	Dataset   []Data
-}
-
-func (_this *Recognizer) SaveDataset(Path string) error {
-
-	data, err := jsonMarshal(_this.Dataset)
-
-	if err != nil {
-		return err
-	}
-
-	return ioutil.WriteFile(Path, data, 0777)
-
-}
-
-func (_this *Recognizer) LoadDataset(Path string) error {
-
-	if !fileExists(Path) {
-		return errors.New("file not found")
-	}
-
-	file, err := os.OpenFile(Path, os.O_RDONLY, 0777)
-	if err != nil {
-		return err
-	}
-
-	Dataset := make([]Data, 0)
-	err = json.NewDecoder(file).Decode(&Dataset)
-	if err != nil {
-		return err
-	}
-
-	_this.Dataset = append(_this.Dataset, Dataset...)
-
-	return nil
-
 }
 
 func (_this *Recognizer) Init(Path string) error {
@@ -89,7 +53,7 @@ func (_this *Recognizer) Close() {
 
 }
 
-func (_this *Recognizer) AddFile(Path string, Id string) error {
+func (_this *Recognizer) AddImageToDataset(Path string, Id string) error {
 
 	file := Path
 	var err error
@@ -106,7 +70,14 @@ func (_this *Recognizer) AddFile(Path string, Id string) error {
 
 	}
 
-	faces, err := _this.rec.RecognizeFileCNN(file)
+	var faces []face.Face
+
+	if _this.UseCNN {
+		faces, err = _this.rec.RecognizeFileCNN(file)
+	} else {
+		faces, err = _this.rec.RecognizeFile(file)
+	}
+
 	if err != nil {
 		return err
 	}
@@ -156,7 +127,14 @@ func (_this *Recognizer) Classify(Path string) (error, Data, []Face) {
 
 	}
 
-	face, err := _this.rec.RecognizeSingleFileCNN(file)
+	var face *face.Face
+
+	if _this.UseCNN {
+		face, err = _this.rec.RecognizeSingleFileCNN(file)
+	} else {
+		face, err = _this.rec.RecognizeSingleFile(file)
+	}
+
 	if err != nil {
 		return fmt.Errorf("Can't recognize: %v", err), Data{}, nil
 
@@ -195,7 +173,14 @@ func (_this *Recognizer) ClassifyMultiples(Path string) (error, []Data, []Face) 
 
 	}
 
-	faces, err := _this.rec.RecognizeFileCNN(file)
+	var faces []face.Face
+
+	if _this.UseCNN {
+		faces, err = _this.rec.RecognizeFileCNN(file)
+	} else {
+		faces, err = _this.rec.RecognizeFileCNN(file)
+	}
+
 	if err != nil {
 		return fmt.Errorf("Can't recognize: %v", err), nil, nil
 	}

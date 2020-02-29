@@ -11,7 +11,7 @@ const dataDir = "models"
 
 func addFile(rec *recognizer.Recognizer, Path, Id string) {
 
-	err := rec.AddFile(Path, Id)
+	err := rec.AddImageToDataset(Path, Id)
 
 	if err != nil {
 		fmt.Println(err)
