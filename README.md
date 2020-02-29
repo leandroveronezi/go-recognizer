@@ -10,7 +10,6 @@
 go-recognizer require go-face to compile. go-face need to have dlib (>= 19.10) and libjpeg development packages installed.
 For install details see [go-face](https://github.com/Kagami/go-face) documentation.
 
-
 ## Usage
 
 To use go-recognizer in your Go code:
@@ -25,6 +24,21 @@ To install go-recognizer in your $GOPATH:
 go get github.com/leandroveronezi/go-recognizer
 ```
 
+## Models
+
+Currently `shape_predictor_5_face_landmarks.dat`, `mmod_human_face_detector.dat` and
+`dlib_face_recognition_resnet_model_v1.dat` are required. You may download them
+from [dlib-models](https://github.com/davisking/dlib-models) repo:
+
+```bash
+mkdir models && cd models
+wget https://github.com/davisking/dlib-models/raw/master/shape_predictor_5_face_landmarks.dat.bz2
+bunzip2 shape_predictor_5_face_landmarks.dat.bz2
+wget https://github.com/davisking/dlib-models/raw/master/dlib_face_recognition_resnet_model_v1.dat.bz2
+bunzip2 dlib_face_recognition_resnet_model_v1.dat.bz2
+wget https://github.com/davisking/dlib-models/raw/master/mmod_human_face_detector.dat.bz2
+bunzip2 mmod_human_face_detector.dat.bz2
+```
 
 ## Examples
 
