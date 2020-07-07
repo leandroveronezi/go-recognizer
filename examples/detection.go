@@ -33,8 +33,11 @@ func main() {
 
 	img, err := rec.DrawFaces2(filepath.Join(fotosDir, "elenco3.jpg"), faces)
 
-	if err == nil {
-		rec.SaveImage("faces2.jpg", img)
+	if err != nil {
+		fmt.Println(err)
+		return
 	}
+
+	rec.SaveImage("faces2.jpg", img)
 
 }

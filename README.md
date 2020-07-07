@@ -49,7 +49,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/leandroveronezi/recognizer"
+	"github.com/leandroveronezi/go-recognizer"
 	"path/filepath"
 )
 
@@ -104,7 +104,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/leandroveronezi/recognizer"
+	"github.com/leandroveronezi/go-recognizer"
 	"path/filepath"
 )
 
