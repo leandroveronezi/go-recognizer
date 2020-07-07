@@ -1,4 +1,4 @@
-module github.com/leandroveronezi/recognizer
+module github.com/leandroveronezi/go-recognizer
 
 go 1.13
 
