@@ -80,7 +80,7 @@ func main() {
 
 	img, err := rec.DrawFaces2(filepath.Join(fotosDir, "elenco3.jpg"), faces)
 
-    if err != nil {
+    	if err != nil {
 		fmt.Println(err)
 		return
 	}
@@ -159,7 +159,7 @@ func main() {
 
 	img, err := rec.DrawFaces(filepath.Join(fotosDir, "elenco3.jpg"), faces)
 
-    if err != nil {
+    	if err != nil {
 		fmt.Println(err)
 		return
 	}
