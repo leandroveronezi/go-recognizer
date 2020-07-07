@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/Kagami/go-face"
+	face "github.com/Kagami/go-face"
 	"image"
 	"os"
 )
