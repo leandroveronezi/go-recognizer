@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	face "github.com/Kagami/go-face"
+	goFace "github.com/Kagami/go-face"
 	"image"
 	"os"
 )
@@ -13,7 +13,7 @@ import (
 // Data descriptor of the human face.
 type Data struct {
 	Id         string
-	Descriptor face.Descriptor
+	Descriptor goFace.Descriptor
 }
 
 // Face holds coordinates and descriptor of the human face.
@@ -28,7 +28,7 @@ classifies them into categories.
 */
 type Recognizer struct {
 	Tolerance float32
-	rec       *face.Recognizer
+	rec       *goFace.Recognizer
 	UseCNN    bool
 	UseGray   bool
 	Dataset   []Data
@@ -45,7 +45,7 @@ func (_this *Recognizer) Init(Path string) error {
 
 	_this.Dataset = make([]Data, 0)
 
-	rec, err := face.NewRecognizer(Path)
+	rec, err := goFace.NewRecognizer(Path)
 
 	if err == nil {
 		_this.rec = rec
@@ -85,7 +85,7 @@ func (_this *Recognizer) AddImageToDataset(Path string, Id string) error {
 
 	}
 
-	var faces []face.Face
+	var faces []goFace.Face
 
 	if _this.UseCNN {
 		faces, err = _this.rec.RecognizeFileCNN(file)
@@ -116,7 +116,7 @@ SetSamples sets known descriptors so you can classify the new ones.
 */
 func (_this *Recognizer) SetSamples() {
 
-	var samples []face.Descriptor
+	var samples []goFace.Descriptor
 	var avengers []int32
 
 	for i, f := range _this.Dataset {
@@ -132,7 +132,7 @@ func (_this *Recognizer) SetSamples() {
 RecognizeSingle returns face if it's the only face on the image or nil otherwise.
 Only JPEG format is currently supported.
 */
-func (_this *Recognizer) RecognizeSingle(Path string) (face.Face, error) {
+func (_this *Recognizer) RecognizeSingle(Path string) (goFace.Face, error) {
 
 	file := Path
 	var err error
@@ -142,14 +142,14 @@ func (_this *Recognizer) RecognizeSingle(Path string) (face.Face, error) {
 		file, err = _this.createTempGrayFile(file, "64ab59ac42d69274f06eadb11348969e")
 
 		if err != nil {
-			return face.Face{}, err
+			return goFace.Face{}, err
 		}
 
 		defer os.Remove(file)
 
 	}
 
-	var idFace *face.Face
+	var idFace *goFace.Face
 
 	if _this.UseCNN {
 		idFace, err = _this.rec.RecognizeSingleFileCNN(file)
@@ -158,11 +158,11 @@ func (_this *Recognizer) RecognizeSingle(Path string) (face.Face, error) {
 	}
 
 	if err != nil {
-		return face.Face{}, fmt.Errorf("Can't recognize: %v", err)
+		return goFace.Face{}, fmt.Errorf("Can't recognize: %v", err)
 
 	}
 	if idFace == nil {
-		return face.Face{}, fmt.Errorf("Not a single face on the image")
+		return goFace.Face{}, fmt.Errorf("Not a single face on the image")
 	}
 
 	return *idFace, nil
@@ -175,7 +175,7 @@ left to right. Empty list is returned if there are no faces, error is
 returned if there was some error while decoding/processing image.
 Only JPEG format is currently supported.
 */
-func (_this *Recognizer) RecognizeMultiples(Path string) ([]face.Face, error) {
+func (_this *Recognizer) RecognizeMultiples(Path string) ([]goFace.Face, error) {
 
 	file := Path
 	var err error
@@ -192,7 +192,7 @@ func (_this *Recognizer) RecognizeMultiples(Path string) ([]face.Face, error) {
 
 	}
 
-	var idFaces []face.Face
+	var idFaces []goFace.Face
 
 	if _this.UseCNN {
 		idFaces, err = _this.rec.RecognizeFileCNN(file)
