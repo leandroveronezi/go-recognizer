@@ -97,6 +97,10 @@ func (_this *Recognizer) AddImageToDataset(Path string, Id string) error {
 		return err
 	}
 
+	if len(faces) == 0 {
+		return errors.New("Not a face on the image")
+	}
+
 	if len(faces) > 1 {
 		return errors.New("Not a single face on the image")
 	}
