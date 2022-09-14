@@ -8,7 +8,6 @@
 
 ## Requirements
 go-recognizer require go-face to compile. go-face need to have dlib (>= 19.10) and libjpeg development packages installed.
-For install details see [go-face](https://github.com/Kagami/go-face) documentation.
 
 ```bash
 # Ubuntu
