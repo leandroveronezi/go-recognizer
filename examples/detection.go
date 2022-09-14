@@ -2,8 +2,9 @@ package main
 
 import (
 	"fmt"
-	"github.com/leandroveronezi/go-recognizer"
 	"path/filepath"
+
+	"github.com/leandroveronezi/go-recognizer"
 )
 
 const fotosDir = "fotos"
