@@ -9,6 +9,10 @@
 ## Requirements
 go-recognizer require go-face to compile. go-face need to have dlib (>= 19.10) and libjpeg development packages installed.
 
+### Ubuntu 18.10+, Debian sid
+
+Latest versions of Ubuntu and Debian provide suitable dlib package so just run:
+
 ```bash
 # Ubuntu
 sudo apt-get install libdlib-dev libblas-dev libatlas-base-dev liblapack-dev libjpeg-turbo8-dev
