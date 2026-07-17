@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"image"
 	"os"
+	"sync"
 
 	goFace "github.com/Kagami/go-face"
 )
@@ -33,6 +34,7 @@ type Recognizer struct {
 	UseCNN    bool
 	UseGray   bool
 	Dataset   []Data
+	mu        sync.RWMutex
 }
 
 /*
@@ -44,7 +46,9 @@ func (_this *Recognizer) Init(Path string) error {
 	_this.UseCNN = false
 	_this.UseGray = true
 
+	_this.mu.Lock()
 	_this.Dataset = make([]Data, 0)
+	_this.mu.Unlock()
 
 	rec, err := goFace.NewRecognizer(Path)
 
@@ -110,7 +114,9 @@ func (_this *Recognizer) AddImageToDataset(Path string, Id string) error {
 	f.Id = Id
 	f.Descriptor = faces[0].Descriptor
 
+	_this.mu.Lock()
 	_this.Dataset = append(_this.Dataset, f)
+	_this.mu.Unlock()
 
 	return nil
 
@@ -124,10 +130,12 @@ func (_this *Recognizer) SetSamples() {
 	var samples []goFace.Descriptor
 	var avengers []int32
 
+	_this.mu.RLock()
 	for i, f := range _this.Dataset {
 		samples = append(samples, f.Descriptor)
 		avengers = append(avengers, int32(i))
 	}
+	_this.mu.RUnlock()
 
 	_this.rec.SetSamples(samples, avengers)
 
@@ -229,6 +237,13 @@ func (_this *Recognizer) Classify(Path string) ([]Face, error) {
 		return nil, fmt.Errorf("Can't classify")
 	}
 
+	_this.mu.RLock()
+	defer _this.mu.RUnlock()
+
+	if personID >= len(_this.Dataset) {
+		return nil, fmt.Errorf("Can't classify")
+	}
+
 	facesRec := make([]Face, 0)
 	aux := Face{Data: _this.Dataset[personID], Rectangle: face.Rectangle}
 	facesRec = append(facesRec, aux)
@@ -257,7 +272,13 @@ func (_this *Recognizer) ClassifyMultiples(Path string) ([]Face, error) {
 			continue
 		}
 
+		_this.mu.RLock()
+		if personID >= len(_this.Dataset) {
+			_this.mu.RUnlock()
+			continue
+		}
 		aux := Face{Data: _this.Dataset[personID], Rectangle: f.Rectangle}
+		_this.mu.RUnlock()
 
 		facesRec = append(facesRec, aux)
 

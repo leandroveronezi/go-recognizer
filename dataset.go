@@ -3,7 +3,6 @@ package recognizer
 import (
 	"encoding/json"
 	"errors"
-	"io/ioutil"
 	"os"
 )
 
@@ -12,13 +11,21 @@ SaveDataset saves Dataset data to a json file
 */
 func (_this *Recognizer) SaveDataset(Path string) error {
 
-	data, err := jsonMarshal(_this.Dataset)
+	data, err := func() ([]byte, error) {
+		_this.mu.RLock()
+		defer _this.mu.RUnlock()
+		return jsonMarshal(_this.Dataset)
+	}()
 
 	if err != nil {
 		return err
 	}
 
-	return ioutil.WriteFile(Path, data, 0777)
+	if err := os.WriteFile(Path, data, 0600); err != nil {
+		return err
+	}
+
+	return os.Chmod(Path, 0600)
 
 }
 
@@ -31,10 +38,12 @@ func (_this *Recognizer) LoadDataset(Path string) error {
 		return errors.New("file not found")
 	}
 
-	file, err := os.OpenFile(Path, os.O_RDONLY, 0777)
+	file, err := os.Open(Path)
+
 	if err != nil {
 		return err
 	}
+	defer file.Close()
 
 	Dataset := make([]Data, 0)
 	err = json.NewDecoder(file).Decode(&Dataset)
@@ -42,7 +51,9 @@ func (_this *Recognizer) LoadDataset(Path string) error {
 		return err
 	}
 
+	_this.mu.Lock()
 	_this.Dataset = append(_this.Dataset, Dataset...)
+	_this.mu.Unlock()
 
 	return nil
 

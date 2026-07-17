@@ -47,6 +47,7 @@ func (_this *Recognizer) SaveImage(Path string, Img image.Image) error {
 	err = jpeg.Encode(outputFile, Img, nil)
 
 	if err != nil {
+		outputFile.Close()
 		return err
 	}
 
@@ -89,6 +90,7 @@ func (_this *Recognizer) createTempGrayFile(Path, Id string) (string, error) {
 	err = _this.SaveImage(name, img)
 
 	if err != nil {
+		os.Remove(name)
 		return "", err
 	}
 
