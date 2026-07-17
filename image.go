@@ -4,7 +4,6 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	goFace "github.com/Kagami/go-face"
-	"github.com/disintegration/imaging"
 	"github.com/fogleman/gg"
 	"github.com/golang/freetype/truetype"
 	"golang.org/x/image/font/gofont/goregular"
@@ -60,7 +59,16 @@ GrayScale Convert an image to grayscale
 */
 func (_this *Recognizer) GrayScale(imgSrc image.Image) image.Image {
 
-	return imaging.Grayscale(imgSrc)
+	bounds := imgSrc.Bounds()
+	gray := image.NewGray(bounds)
+
+	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
+		for x := bounds.Min.X; x < bounds.Max.X; x++ {
+			gray.Set(x, y, imgSrc.At(x, y))
+		}
+	}
+
+	return gray
 
 }
 
