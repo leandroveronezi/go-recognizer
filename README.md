@@ -1,17 +1,35 @@
-## Face detection and recognition using golang
+## go-recognizer
+
+Face detection and recognition for Go, built on top of [dlib](http://dlib.net)
+via [go-face](https://github.com/leandroveronezi/go-face). It wraps the
+lower-level go-face API into a small, batteries-included `Recognizer` type:
+load a photo, find faces, classify them against a labeled dataset, and draw
+the results back onto the image — in a handful of method calls.
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/leandroveronezi/go-recognizer)](https://goreportcard.com/report/github.com/leandroveronezi/go-recognizer)
-[![GoDoc](https://godoc.org/github.com/leandroveronezi/go-recognizer?status.png)](https://godoc.org/github.com/leandroveronezi/go-recognizer)
+[![Go Reference](https://pkg.go.dev/badge/github.com/leandroveronezi/go-recognizer.svg)](https://pkg.go.dev/github.com/leandroveronezi/go-recognizer)
+[![Latest tag](https://img.shields.io/github/v/tag/leandroveronezi/go-recognizer.svg)](https://github.com/leandroveronezi/go-recognizer/tags)
 ![MIT Licensed](https://img.shields.io/github/license/leandroveronezi/go-recognizer.svg)
-![](https://img.shields.io/github/repo-size/leandroveronezi/go-recognizer.svg)
 [![](https://img.shields.io/badge/Require-go--face-blue.svg)](https://github.com/leandroveronezi/go-face)
 
+## Features
+
+- **Detection** — find one or many faces in an image, sorted left to right.
+- **Recognition** — classify detected faces against a dataset of known people.
+- **Configurable matching** — tune the distance `Tolerance` used to accept a match.
+- **CNN or HOG detector** — trade speed for accuracy with `UseCNN`.
+- **Grayscale preprocessing** — optional, via `UseGray`.
+- **Dataset persistence** — save/load known faces to/from a JSON file.
+- **Drawing helpers** — annotate the source image with boxes and labels for the faces found.
+
 ## Requirements
-go-recognizer require go-face to compile. go-face need to have dlib (>= 19.10) and libjpeg development packages installed.
+
+go-recognizer depends on go-face, which in turn requires dlib (>= 19.10) and the
+libjpeg development headers to compile.
 
 ### Ubuntu 18.10+, Debian sid
 
-Latest versions of Ubuntu and Debian provide suitable dlib package so just run:
+Latest versions of Ubuntu and Debian provide a suitable dlib package, so just run:
 
 ```bash
 # Ubuntu
@@ -45,32 +63,26 @@ Make sure you have [MSYS2](https://www.msys2.org) installed.
 
 ### Other systems
 
-Try to install dlib/libjpeg with package manager of your distribution or
-[compile from sources](http://dlib.net/compile.html). Note that go-face won't
-work with old packages of dlib such as libdlib18. Alternatively create issue
-with the name of your system and someone might help you with the installation
-process.
+Try installing dlib/libjpeg with your distribution's package manager, or
+[compile dlib from source](http://dlib.net/compile.html). go-face won't work
+with old dlib packages such as libdlib18. If your system isn't covered here,
+open an issue with the distribution/version and we'll try to help.
 
-
-## Usage
-
-To use go-recognizer in your Go code:
-
-```go
-import "github.com/leandroveronezi/go-recognizer"
-```
-
-To install go-recognizer in your $GOPATH:
+## Installation
 
 ```bash
 go get github.com/leandroveronezi/go-recognizer
 ```
 
+```go
+import "github.com/leandroveronezi/go-recognizer"
+```
+
 ## Models
 
-Currently `shape_predictor_5_face_landmarks.dat`, `mmod_human_face_detector.dat` and
-`dlib_face_recognition_resnet_model_v1.dat` are required. You may download them
-from [dlib-models](https://github.com/davisking/dlib-models) repo:
+`shape_predictor_5_face_landmarks.dat`, `mmod_human_face_detector.dat` and
+`dlib_face_recognition_resnet_model_v1.dat` are required at runtime. Download
+them from the [dlib-models](https://github.com/davisking/dlib-models) repo:
 
 ```bash
 mkdir models && cd models
@@ -84,15 +96,18 @@ bunzip2 mmod_human_face_detector.dat.bz2
 
 ## Examples
 
-###### Face detection 
+Runnable versions of both examples below live in [`examples/`](examples/).
+
+#### Face detection
 
 ```go
 package main
 
 import (
 	"fmt"
-	"github.com/leandroveronezi/go-recognizer"
 	"path/filepath"
+
+	"github.com/leandroveronezi/go-recognizer"
 )
 
 const fotosDir = "fotos"
@@ -122,35 +137,28 @@ func main() {
 
 	img, err := rec.DrawFaces2(filepath.Join(fotosDir, "elenco3.jpg"), faces)
 
-    	if err != nil {
+	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	
-	rec.SaveImage("faces2.jpeg", img)
+
+	rec.SaveImage("faces2.jpg", img)
 
 }
 ```
 
-![](https://leandroveronezi.github.io/go-recognizer/examples/faces2.jpg)
+![Face detection result](https://leandroveronezi.github.io/go-recognizer/examples/faces2.jpg)
 
-
-
-
-
-
-
-
-
-###### Face recognition 
+#### Face recognition
 
 ```go
 package main
 
 import (
 	"fmt"
-	"github.com/leandroveronezi/go-recognizer"
 	"path/filepath"
+
+	"github.com/leandroveronezi/go-recognizer"
 )
 
 const fotosDir = "fotos"
@@ -201,15 +209,24 @@ func main() {
 
 	img, err := rec.DrawFaces(filepath.Join(fotosDir, "elenco3.jpg"), faces)
 
-    	if err != nil {
+	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	
+
 	rec.SaveImage("faces.jpg", img)
 
 }
-
 ```
 
-![](https://leandroveronezi.github.io/go-recognizer/examples/faces.jpg)
+![Face recognition result](https://leandroveronezi.github.io/go-recognizer/examples/faces.jpg)
+
+## Contributing
+
+Issues and pull requests are welcome. If you're reporting a build problem,
+please include your OS/distribution, Go version, and the full compiler
+output.
+
+## License
+
+[MIT](LICENSE)
