@@ -3,8 +3,8 @@ module exemples
 go 1.25.0
 
 require (
-	github.com/leandroveronezi/go-face v1.0.5
-	github.com/leandroveronezi/go-recognizer v1.0.8
+	github.com/leandroveronezi/go-face v1.0.7
+	github.com/leandroveronezi/go-recognizer v1.0.9
 )
 
 require (
