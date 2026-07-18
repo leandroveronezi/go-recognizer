@@ -6,7 +6,6 @@ lower-level go-face API into a small, batteries-included `Recognizer` type:
 load a photo, find faces, classify them against a labeled dataset, and draw
 the results back onto the image — in a handful of method calls.
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/leandroveronezi/go-recognizer)](https://goreportcard.com/report/github.com/leandroveronezi/go-recognizer)
 [![Go Reference](https://pkg.go.dev/badge/github.com/leandroveronezi/go-recognizer.svg)](https://pkg.go.dev/github.com/leandroveronezi/go-recognizer)
 [![Latest tag](https://img.shields.io/github/v/tag/leandroveronezi/go-recognizer.svg)](https://github.com/leandroveronezi/go-recognizer/tags)
 ![MIT Licensed](https://img.shields.io/github/license/leandroveronezi/go-recognizer.svg)
@@ -26,6 +25,12 @@ the results back onto the image — in a handful of method calls.
 
 go-recognizer depends on go-face, which in turn requires dlib (>= 19.10) and the
 libjpeg development headers to compile.
+
+go-face uses cgo, so `CGO_ENABLED=1` is required at build time (this is the
+default on most setups, but some environments/CI images turn it off). If you
+see errors like `undefined: face.NewRecognizer` or `undefined: face.Descriptor`
+instead of a compiler error, that's almost always CGO being disabled — run
+`go env -w CGO_ENABLED=1` or set the env var for the build.
 
 ### Ubuntu 18.10+, Debian sid
 
