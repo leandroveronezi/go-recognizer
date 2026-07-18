@@ -1,8 +1,6 @@
 package recognizer
 
 import (
-	"crypto/rand"
-	"encoding/hex"
 	goFace "github.com/leandroveronezi/go-face"
 	"github.com/fogleman/gg"
 	"github.com/golang/freetype/truetype"
@@ -11,7 +9,6 @@ import (
 	"image/color"
 	"image/jpeg"
 	"os"
-	"path/filepath"
 )
 
 /*
@@ -79,35 +76,37 @@ func (_this *Recognizer) GrayScale(imgSrc image.Image) image.Image {
 }
 
 /*
-createTempGrayFile create a temporary image in grayscale
+loadPixels loads Path, converts it to grayscale, and returns it as a
+tightly packed RGB pixel buffer (3 bytes per pixel, row-major) ready for
+goFace's Raw recognition methods -- no JPEG encoding/decoding involved.
 */
-func (_this *Recognizer) createTempGrayFile(Path, Id string) (string, error) {
-
-	name := _this.tempFileName(Id, ".jpeg")
+func (_this *Recognizer) loadPixels(Path string) (pixels []byte, width, height int, err error) {
 
 	img, err := _this.LoadImage(Path)
 
 	if err != nil {
-		return "", err
+		return nil, 0, 0, err
 	}
 
 	img = _this.GrayScale(img)
-	err = _this.SaveImage(name, img)
 
-	if err != nil {
-		os.Remove(name)
-		return "", err
+	bounds := img.Bounds()
+	width, height = bounds.Dx(), bounds.Dy()
+	pixels = make([]byte, width*height*3)
+
+	i := 0
+	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
+		for x := bounds.Min.X; x < bounds.Max.X; x++ {
+			r, g, b, _ := img.At(x, y).RGBA()
+			pixels[i] = byte(r >> 8)
+			pixels[i+1] = byte(g >> 8)
+			pixels[i+2] = byte(b >> 8)
+			i += 3
+		}
 	}
 
-	return name, nil
+	return pixels, width, height, nil
 
-}
-
-// tempFileName generates a temporary filename
-func (_this *Recognizer) tempFileName(prefix, suffix string) string {
-	randBytes := make([]byte, 16)
-	rand.Read(randBytes)
-	return filepath.Join(os.TempDir(), prefix+hex.EncodeToString(randBytes)+suffix)
 }
 
 /*

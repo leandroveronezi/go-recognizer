@@ -111,6 +111,36 @@ func (_this *Recognizer) Close() {
 }
 
 /*
+detect runs face detection on Path, returning every face found. It
+prefers the raw-pixel path when UseGray is set -- decoding, grayscaling,
+and handing pixels straight to goFace, with no JPEG round trip involved
+-- and otherwise hands Path straight to go-face, which only understands
+JPEG.
+*/
+func (_this *Recognizer) detect(Path string) ([]goFace.Face, error) {
+
+	if _this.UseGray {
+
+		pixels, width, height, err := _this.loadPixels(Path)
+		if err != nil {
+			return nil, err
+		}
+
+		if _this.UseCNN {
+			return _this.rec.RecognizeRawCNN(pixels, width, height)
+		}
+		return _this.rec.RecognizeRaw(pixels, width, height)
+
+	}
+
+	if _this.UseCNN {
+		return _this.rec.RecognizeFileCNN(Path)
+	}
+	return _this.rec.RecognizeFile(Path)
+
+}
+
+/*
 AddImageToDataset add a sample image to the dataset.
 
 The new entry is appended to the underlying classifier immediately (via
@@ -121,28 +151,7 @@ incremental path.
 */
 func (_this *Recognizer) AddImageToDataset(Path string, Id string) error {
 
-	file := Path
-	var err error
-
-	if _this.UseGray {
-
-		file, err = _this.createTempGrayFile(file, Id)
-
-		if err != nil {
-			return err
-		}
-
-		defer os.Remove(file)
-
-	}
-
-	var faces []goFace.Face
-
-	if _this.UseCNN {
-		faces, err = _this.rec.RecognizeFileCNN(file)
-	} else {
-		faces, err = _this.rec.RecognizeFile(file)
-	}
+	faces, err := _this.detect(Path)
 
 	if err != nil {
 		return err
@@ -199,31 +208,33 @@ func (_this *Recognizer) SetSamples() {
 
 /*
 RecognizeSingle returns face if it's the only face on the image or nil otherwise.
-Only JPEG format is currently supported.
 */
 func (_this *Recognizer) RecognizeSingle(Path string) (goFace.Face, error) {
 
-	file := Path
+	var idFace *goFace.Face
 	var err error
 
 	if _this.UseGray {
 
-		file, err = _this.createTempGrayFile(file, "64ab59ac42d69274f06eadb11348969e")
-
-		if err != nil {
-			return goFace.Face{}, err
+		pixels, width, height, lerr := _this.loadPixels(Path)
+		if lerr != nil {
+			return goFace.Face{}, lerr
 		}
 
-		defer os.Remove(file)
+		if _this.UseCNN {
+			idFace, err = _this.rec.RecognizeSingleRawCNN(pixels, width, height)
+		} else {
+			idFace, err = _this.rec.RecognizeSingleRaw(pixels, width, height)
+		}
 
-	}
-
-	var idFace *goFace.Face
-
-	if _this.UseCNN {
-		idFace, err = _this.rec.RecognizeSingleFileCNN(file)
 	} else {
-		idFace, err = _this.rec.RecognizeSingleFile(file)
+
+		if _this.UseCNN {
+			idFace, err = _this.rec.RecognizeSingleFileCNN(Path)
+		} else {
+			idFace, err = _this.rec.RecognizeSingleFile(Path)
+		}
+
 	}
 
 	if err != nil {
@@ -242,32 +253,10 @@ func (_this *Recognizer) RecognizeSingle(Path string) (goFace.Face, error) {
 RecognizeMultiples returns all faces found on the provided image, sorted from
 left to right. Empty list is returned if there are no faces, error is
 returned if there was some error while decoding/processing image.
-Only JPEG format is currently supported.
 */
 func (_this *Recognizer) RecognizeMultiples(Path string) ([]goFace.Face, error) {
 
-	file := Path
-	var err error
-
-	if _this.UseGray {
-
-		file, err = _this.createTempGrayFile(file, "64ab59ac42d69274f06eadb11348969e")
-
-		if err != nil {
-			return nil, err
-		}
-
-		defer os.Remove(file)
-
-	}
-
-	var idFaces []goFace.Face
-
-	if _this.UseCNN {
-		idFaces, err = _this.rec.RecognizeFileCNN(file)
-	} else {
-		idFaces, err = _this.rec.RecognizeFile(file)
-	}
+	idFaces, err := _this.detect(Path)
 
 	if err != nil {
 		return nil, fmt.Errorf("Can't recognize: %v", err)
