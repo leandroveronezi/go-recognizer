@@ -19,7 +19,10 @@ the results back onto the image — in a handful of method calls.
   sync as each face is added; no need to rebuild the whole sample set.
 - **Match distance/confidence** — `Classify`/`ClassifyMultiples` return the
   matched face's `Distance` and a normalized `Confidence` score, not just an ID.
-- **Landmarks** — detected faces carry their `Shapes` (facial landmark points).
+- **Landmarks** — detected faces carry their `Shapes` (facial landmark
+  points). Defaults to 5 points (eye corners, nose base); set
+  `rec.Model.Landmark` before `Init` to opt into the 68-point model for
+  full facial contour (jawline, eyebrows, nose bridge, eyes, lips).
 - **Configurable matching** — tune the distance `Tolerance` used to accept a match.
 - **CNN or HOG detector** — trade speed for accuracy with `UseCNN`.
 - **Grayscale preprocessing** — optional, via `UseGray`.
@@ -103,6 +106,16 @@ wget https://github.com/davisking/dlib-models/raw/master/dlib_face_recognition_r
 bunzip2 dlib_face_recognition_resnet_model_v1.dat.bz2
 wget https://github.com/davisking/dlib-models/raw/master/mmod_human_face_detector.dat.bz2
 bunzip2 mmod_human_face_detector.dat.bz2
+```
+
+Optional: `shape_predictor_68_face_landmarks.dat` for full facial contour
+landmarks (see `rec.Model.Landmark` below). It's a much larger download
+(~95MB uncompressed, vs ~9MB for the 5-point model), so it's opt-in rather
+than required.
+
+```bash
+wget https://github.com/davisking/dlib-models/raw/master/shape_predictor_68_face_landmarks.dat.bz2
+bunzip2 shape_predictor_68_face_landmarks.dat.bz2
 ```
 
 ## Examples
@@ -292,6 +305,16 @@ func main() {
 ```
 
 ![Face landmarks result](https://leandroveronezi.github.io/go-recognizer/examples/landmarks.jpg)
+
+This uses the default 5-point model. For the full facial contour, download
+`shape_predictor_68_face_landmarks.dat` (see [Models](#models)) and set
+`rec.Model.Landmark` before `Init`:
+
+```go
+rec := recognizer.Recognizer{}
+rec.Model.Landmark = "shape_predictor_68_face_landmarks.dat"
+err := rec.Init(dataDir)
+```
 
 ## Contributing
 
