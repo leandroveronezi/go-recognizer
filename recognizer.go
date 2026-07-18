@@ -22,6 +22,17 @@ type Data struct {
 type Face struct {
 	Data
 	Rectangle image.Rectangle
+	// Shapes holds the facial landmark points found by the shape predictor
+	// model (5 points with the default shape_predictor_5_face_landmarks.dat).
+	Shapes []image.Point
+	// Distance is the squared Euclidean distance between this face's
+	// descriptor and the matched Dataset entry's descriptor. Only set by
+	// Classify/ClassifyMultiples; zero otherwise.
+	Distance float64
+	// Confidence is a convenience score in [0,1], normalized as
+	// 1-Distance/Tolerance -- not a calibrated probability. Only set by
+	// Classify/ClassifyMultiples; zero otherwise.
+	Confidence float64
 }
 
 /*
@@ -76,10 +87,11 @@ func (_this *Recognizer) Close() {
 /*
 AddImageToDataset add a sample image to the dataset.
 
-Call SetSamples again after adding one or more images: Classify and
-ClassifyMultiples match against the sample set from the last SetSamples
-call, not the live Dataset, so newly added entries are invisible to them
-until SetSamples runs again.
+The new entry is appended to the underlying classifier immediately (via
+goFace.AppendSample), so it's classifiable right away -- no need to call
+SetSamples afterward. SetSamples is still required after LoadDataset or
+after mutating Dataset directly, since those don't go through this
+incremental path.
 */
 func (_this *Recognizer) AddImageToDataset(Path string, Id string) error {
 
@@ -124,19 +136,24 @@ func (_this *Recognizer) AddImageToDataset(Path string, Id string) error {
 
 	_this.mu.Lock()
 	_this.Dataset = append(_this.Dataset, f)
+	idx := len(_this.Dataset) - 1
 	_this.mu.Unlock()
+
+	_this.rec.AppendSample(f.Descriptor, int32(idx))
 
 	return nil
 
 }
 
 /*
-SetSamples sets known descriptors so you can classify the new ones.
+SetSamples rebuilds the classifier's sample set from the entire current
+Dataset.
 
-Must be called (again) after any change to Dataset -- AddImageToDataset,
-LoadDataset, or a fresh Init -- since Classify and ClassifyMultiples index
-into Dataset using positions captured at the last SetSamples call, and
-those positions go stale as soon as Dataset changes underneath them.
+AddImageToDataset already keeps the classifier in sync incrementally, so
+this is only needed after LoadDataset (bulk load) or after mutating
+Dataset directly -- those don't go through AddImageToDataset's
+incremental path, so the classifier would otherwise keep matching
+against a stale or empty sample set.
 */
 func (_this *Recognizer) SetSamples() {
 
@@ -260,8 +277,17 @@ func (_this *Recognizer) Classify(Path string) ([]Face, error) {
 		return nil, fmt.Errorf("Can't classify")
 	}
 
+	matched := _this.Dataset[personID]
+	distance := goFace.SquaredEuclideanDistance(matched.Descriptor, face.Descriptor)
+
 	facesRec := make([]Face, 0)
-	aux := Face{Data: _this.Dataset[personID], Rectangle: face.Rectangle}
+	aux := Face{
+		Data:       matched,
+		Rectangle:  face.Rectangle,
+		Shapes:     face.Shapes,
+		Distance:   distance,
+		Confidence: confidence(distance, _this.Tolerance),
+	}
 	facesRec = append(facesRec, aux)
 
 	return facesRec, nil
@@ -296,7 +322,15 @@ func (_this *Recognizer) ClassifyMultiples(Path string) ([]Face, error) {
 			_this.mu.RUnlock()
 			continue
 		}
-		aux := Face{Data: _this.Dataset[personID], Rectangle: f.Rectangle}
+		matched := _this.Dataset[personID]
+		distance := goFace.SquaredEuclideanDistance(matched.Descriptor, f.Descriptor)
+		aux := Face{
+			Data:       matched,
+			Rectangle:  f.Rectangle,
+			Shapes:     f.Shapes,
+			Distance:   distance,
+			Confidence: confidence(distance, _this.Tolerance),
+		}
 		_this.mu.RUnlock()
 
 		facesRec = append(facesRec, aux)
@@ -304,6 +338,32 @@ func (_this *Recognizer) ClassifyMultiples(Path string) ([]Face, error) {
 	}
 
 	return facesRec, nil
+
+}
+
+/*
+confidence normalizes a squared-Euclidean match distance against the
+tolerance used to accept it, into a convenience [0,1] score where 0
+distance is 1.0 and a distance at (or past) the tolerance cutoff is 0.0.
+This is not a calibrated probability.
+*/
+func confidence(distance float64, tolerance float32) float64 {
+
+	if tolerance <= 0 {
+		return 0
+	}
+
+	c := 1 - distance/float64(tolerance)
+
+	if c < 0 {
+		return 0
+	}
+
+	if c > 1 {
+		return 1
+	}
+
+	return c
 
 }
 
