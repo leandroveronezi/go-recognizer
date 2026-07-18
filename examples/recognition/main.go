@@ -2,8 +2,9 @@ package main
 
 import (
 	"fmt"
-	"github.com/leandroveronezi/go-recognizer"
 	"path/filepath"
+
+	"github.com/leandroveronezi/go-recognizer"
 )
 
 const fotosDir = "fotos"
@@ -43,13 +44,18 @@ func main() {
 	addFile(&rec, filepath.Join(fotosDir, "sheldon.jpg"), "Sheldon")
 	addFile(&rec, filepath.Join(fotosDir, "leonard.jpg"), "Leonard")
 
-	rec.SetSamples()
+	// No rec.SetSamples() call needed here: AddImageToDataset already
+	// keeps the classifier in sync incrementally as each face is added.
 
 	faces, err := rec.ClassifyMultiples(filepath.Join(fotosDir, "elenco3.jpg"))
 
 	if err != nil {
 		fmt.Println(err)
 		return
+	}
+
+	for _, f := range faces {
+		fmt.Printf("%s: distance=%.4f confidence=%.2f%%\n", f.Id, f.Distance, f.Confidence*100)
 	}
 
 	img, err := rec.DrawFaces(filepath.Join(fotosDir, "elenco3.jpg"), faces)
