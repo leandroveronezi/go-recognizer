@@ -23,6 +23,9 @@ the results back onto the image — in a handful of method calls.
   points). Defaults to 5 points (eye corners, nose base); set
   `rec.Model.Landmark` before `Init` to opt into the 68-point model for
   full facial contour (jawline, eyebrows, nose bridge, eyes, lips).
+- **Swappable model files** — `rec.Model.Landmark`/`Descriptor`/`CNN` let
+  you point Init at differently-named or fine-tuned model files instead
+  of go-face's defaults.
 - **Configurable matching** — tune the distance `Tolerance` used to accept a match.
 - **CNN or HOG detector** — trade speed for accuracy with `UseCNN`.
 - **Grayscale preprocessing** — optional, via `UseGray`.
@@ -315,6 +318,11 @@ rec := recognizer.Recognizer{}
 rec.Model.Landmark = "shape_predictor_68_face_landmarks.dat"
 err := rec.Init(dataDir)
 ```
+
+`rec.Model.Descriptor` and `rec.Model.CNN` work the same way, for the
+face-descriptor (ResNet) and CNN detector model files respectively —
+useful if you're using differently-named or fine-tuned dlib models. All
+three must be set before calling `Init`; they're read once, at load time.
 
 ## Contributing
 

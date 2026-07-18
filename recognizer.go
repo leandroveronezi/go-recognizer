@@ -49,6 +49,12 @@ type ModelFiles struct {
 	// it's a much larger download and slightly slower per face, so only
 	// opt in if you need the extra landmark detail.
 	Landmark string
+	// Descriptor is the face-descriptor (ResNet) model file name. Empty
+	// uses go-face's default dlib_face_recognition_resnet_model_v1.dat.
+	Descriptor string
+	// CNN is the CNN face detector model file name, used when UseCNN is
+	// true. Empty uses go-face's default mmod_human_face_detector.dat.
+	CNN string
 }
 
 /*
@@ -84,14 +90,7 @@ func (_this *Recognizer) Init(Path string) error {
 	_this.Dataset = make([]Data, 0)
 	_this.mu.Unlock()
 
-	var rec *goFace.Recognizer
-	var err error
-
-	if _this.Model.Landmark != "" {
-		rec, err = goFace.NewRecognizerWithShapePredictor(Path, _this.Model.Landmark)
-	} else {
-		rec, err = goFace.NewRecognizer(Path)
-	}
+	rec, err := goFace.NewRecognizerWithModels(Path, _this.Model.Landmark, _this.Model.Descriptor, _this.Model.CNN)
 
 	if err == nil {
 		_this.rec = rec

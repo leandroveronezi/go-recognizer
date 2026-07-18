@@ -8,4 +8,4 @@ require (
 	golang.org/x/image v0.44.0
 )
 
-require github.com/leandroveronezi/go-face v1.0.3
+require github.com/leandroveronezi/go-face v1.0.4

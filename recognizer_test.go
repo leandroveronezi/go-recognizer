@@ -60,6 +60,87 @@ func TestInitWithShapePredictor68Points(t *testing.T) {
 	}
 }
 
+// TestModelDescriptorFileIsHonored proves Model.Descriptor actually
+// controls which file gets loaded, rather than being silently ignored: a
+// wrong file name must fail to load, and a genuinely renamed resnet model
+// must load successfully and still produce working descriptors.
+func TestModelDescriptorFileIsHonored(t *testing.T) {
+	dir := t.TempDir()
+
+	for _, name := range []string{"shape_predictor_5_face_landmarks.dat", "mmod_human_face_detector.dat"} {
+		copyFile(t, filepath.Join(testModelsDir, name), filepath.Join(dir, name))
+	}
+	copyFile(t, filepath.Join(testModelsDir, "dlib_face_recognition_resnet_model_v1.dat"), filepath.Join(dir, "my_resnet.dat"))
+
+	bad := &Recognizer{}
+	bad.Model.Descriptor = "does-not-exist.dat"
+	if err := bad.Init(dir); err == nil {
+		t.Fatalf("Init: expected an error for a nonexistent Model.Descriptor file, got nil")
+	}
+
+	rec := &Recognizer{}
+	rec.Model.Descriptor = "my_resnet.dat"
+	if err := rec.Init(dir); err != nil {
+		t.Fatalf("Init: %v", err)
+	}
+	t.Cleanup(rec.Close)
+
+	f, err := rec.RecognizeSingle(filepath.Join(testFotosDir, "amy.jpg"))
+	if err != nil {
+		t.Fatalf("RecognizeSingle: %v", err)
+	}
+
+	var zero [128]float32
+	if f.Descriptor == zero {
+		t.Errorf("Descriptor is all-zero, want a real face descriptor")
+	}
+}
+
+// TestModelCNNFileIsHonored is the same proof as
+// TestModelDescriptorFileIsHonored, for Model.CNN.
+func TestModelCNNFileIsHonored(t *testing.T) {
+	dir := t.TempDir()
+
+	for _, name := range []string{"shape_predictor_5_face_landmarks.dat", "dlib_face_recognition_resnet_model_v1.dat"} {
+		copyFile(t, filepath.Join(testModelsDir, name), filepath.Join(dir, name))
+	}
+	copyFile(t, filepath.Join(testModelsDir, "mmod_human_face_detector.dat"), filepath.Join(dir, "my_cnn.dat"))
+
+	bad := &Recognizer{}
+	bad.Model.CNN = "does-not-exist.dat"
+	if err := bad.Init(dir); err == nil {
+		t.Fatalf("Init: expected an error for a nonexistent Model.CNN file, got nil")
+	}
+
+	rec := &Recognizer{}
+	rec.Model.CNN = "my_cnn.dat"
+	if err := rec.Init(dir); err != nil {
+		t.Fatalf("Init: %v", err)
+	}
+	t.Cleanup(rec.Close)
+
+	rec.UseCNN = true
+	faces, err := rec.RecognizeMultiples(filepath.Join(testFotosDir, "amy.jpg"))
+	if err != nil {
+		t.Fatalf("RecognizeMultiples (CNN): %v", err)
+	}
+	if len(faces) == 0 {
+		t.Errorf("got 0 faces via the renamed CNN model, want at least 1")
+	}
+}
+
+func copyFile(t *testing.T, src, dst string) {
+	t.Helper()
+
+	data, err := os.ReadFile(src)
+	if err != nil {
+		t.Fatalf("ReadFile(%s): %v", src, err)
+	}
+	if err := os.WriteFile(dst, data, 0600); err != nil {
+		t.Fatalf("WriteFile(%s): %v", dst, err)
+	}
+}
+
 func TestRecognizeMultiples(t *testing.T) {
 	rec := newTestRecognizer(t)
 
