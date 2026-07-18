@@ -1,6 +1,8 @@
 package recognizer
 
 import (
+	"image/jpeg"
+	"image/png"
 	"os"
 	"path/filepath"
 	"sync"
@@ -138,6 +140,63 @@ func copyFile(t *testing.T, src, dst string) {
 	}
 	if err := os.WriteFile(dst, data, 0600); err != nil {
 		t.Fatalf("WriteFile(%s): %v", dst, err)
+	}
+}
+
+// TestAddImageToDatasetAcceptsPNGWhenUseGray is a regression test for the
+// upstream-reported limitation in Kagami/go-face#45 ("Cannot recognize PNG
+// files"): go-face's own file loader only understands JPEG, but with the
+// default UseGray=true, AddImageToDataset decodes the source with Go's
+// standard image package (which supports PNG here via fogleman/gg's
+// transitive import of image/png) and re-encodes it as JPEG before handing
+// it to go-face, so a PNG source works without extra steps.
+func TestAddImageToDatasetAcceptsPNGWhenUseGray(t *testing.T) {
+	pngPath := filepath.Join(t.TempDir(), "amy.png")
+	convertJPEGToPNG(t, filepath.Join(testFotosDir, "amy.jpg"), pngPath)
+
+	rec := newTestRecognizer(t)
+	if err := rec.AddImageToDataset(pngPath, "Amy"); err != nil {
+		t.Fatalf("AddImageToDataset(png, UseGray=true): %v", err)
+	}
+}
+
+// TestAddImageToDatasetRejectsPNGWithoutUseGray documents the boundary of
+// the above: with UseGray=false the source file is passed straight to
+// go-face without any conversion, so it must already be a JPEG.
+func TestAddImageToDatasetRejectsPNGWithoutUseGray(t *testing.T) {
+	pngPath := filepath.Join(t.TempDir(), "amy.png")
+	convertJPEGToPNG(t, filepath.Join(testFotosDir, "amy.jpg"), pngPath)
+
+	rec := newTestRecognizer(t)
+	rec.UseGray = false
+
+	if err := rec.AddImageToDataset(pngPath, "Amy"); err == nil {
+		t.Fatalf("AddImageToDataset(png, UseGray=false): expected an error, got nil")
+	}
+}
+
+func convertJPEGToPNG(t *testing.T, jpegPath, pngPath string) {
+	t.Helper()
+
+	src, err := os.Open(jpegPath)
+	if err != nil {
+		t.Fatalf("Open(%s): %v", jpegPath, err)
+	}
+	defer src.Close()
+
+	img, err := jpeg.Decode(src)
+	if err != nil {
+		t.Fatalf("jpeg.Decode: %v", err)
+	}
+
+	dst, err := os.Create(pngPath)
+	if err != nil {
+		t.Fatalf("Create(%s): %v", pngPath, err)
+	}
+	defer dst.Close()
+
+	if err := png.Encode(dst, img); err != nil {
+		t.Fatalf("png.Encode: %v", err)
 	}
 }
 

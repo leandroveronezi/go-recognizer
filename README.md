@@ -29,6 +29,13 @@ the results back onto the image — in a handful of method calls.
 - **Configurable matching** — tune the distance `Tolerance` used to accept a match.
 - **CNN or HOG detector** — trade speed for accuracy with `UseCNN`.
 - **Grayscale preprocessing** — optional, via `UseGray`.
+- **Beyond JPEG input** — go-face's own file loader only understands JPEG,
+  but with the default `UseGray = true`, go-recognizer decodes the source
+  image with Go's standard `image` package first (JPEG and PNG are
+  supported out of the box) and re-encodes it before handing it to
+  go-face, so PNG sources work without extra steps. This doesn't apply
+  when `UseGray = false`: the original file is passed straight through,
+  so it must already be a JPEG.
 - **Dataset persistence** — save/load known faces to/from a JSON file.
 - **Drawing helpers** — annotate the source image with boxes, labels, and
   landmark points for the faces found.
