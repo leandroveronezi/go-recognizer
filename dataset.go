@@ -30,7 +30,11 @@ func (_this *Recognizer) SaveDataset(Path string) error {
 }
 
 /*
-LoadDataset loads the data from the json file into the Dataset
+LoadDataset loads the data from the json file into the Dataset.
+
+Call SetSamples afterward: as with AddImageToDataset, Classify and
+ClassifyMultiples won't see the loaded entries until SetSamples runs
+again.
 */
 func (_this *Recognizer) LoadDataset(Path string) error {
 

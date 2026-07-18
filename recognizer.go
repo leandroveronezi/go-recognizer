@@ -33,8 +33,11 @@ type Recognizer struct {
 	rec       *goFace.Recognizer
 	UseCNN    bool
 	UseGray   bool
-	Dataset   []Data
-	mu        sync.RWMutex
+	// Dataset holds the known face samples. Mutate it only through
+	// AddImageToDataset/LoadDataset, and call SetSamples afterward --
+	// see SetSamples.
+	Dataset []Data
+	mu      sync.RWMutex
 }
 
 /*
@@ -71,7 +74,12 @@ func (_this *Recognizer) Close() {
 }
 
 /*
-AddImageToDataset add a sample image to the dataset
+AddImageToDataset add a sample image to the dataset.
+
+Call SetSamples again after adding one or more images: Classify and
+ClassifyMultiples match against the sample set from the last SetSamples
+call, not the live Dataset, so newly added entries are invisible to them
+until SetSamples runs again.
 */
 func (_this *Recognizer) AddImageToDataset(Path string, Id string) error {
 
@@ -124,6 +132,11 @@ func (_this *Recognizer) AddImageToDataset(Path string, Id string) error {
 
 /*
 SetSamples sets known descriptors so you can classify the new ones.
+
+Must be called (again) after any change to Dataset -- AddImageToDataset,
+LoadDataset, or a fresh Init -- since Classify and ClassifyMultiples index
+into Dataset using positions captured at the last SetSamples call, and
+those positions go stale as soon as Dataset changes underneath them.
 */
 func (_this *Recognizer) SetSamples() {
 
@@ -223,6 +236,9 @@ func (_this *Recognizer) RecognizeMultiples(Path string) ([]goFace.Face, error) 
 
 /*
 Classify returns all faces identified in the image. Empty list is returned if no match.
+
+Matches against the sample set from the most recent SetSamples call, not
+necessarily the current Dataset -- see SetSamples.
 */
 func (_this *Recognizer) Classify(Path string) ([]Face, error) {
 
@@ -254,6 +270,9 @@ func (_this *Recognizer) Classify(Path string) ([]Face, error) {
 
 /*
 ClassifyMultiples returns all faces identified in the image. Empty list is returned if no match.
+
+Matches against the sample set from the most recent SetSamples call, not
+necessarily the current Dataset -- see SetSamples.
 */
 func (_this *Recognizer) ClassifyMultiples(Path string) ([]Face, error) {
 
