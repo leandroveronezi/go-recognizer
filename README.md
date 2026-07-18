@@ -15,11 +15,17 @@ the results back onto the image — in a handful of method calls.
 
 - **Detection** — find one or many faces in an image, sorted left to right.
 - **Recognition** — classify detected faces against a dataset of known people.
+- **Incremental dataset updates** — `AddImageToDataset` keeps the classifier in
+  sync as each face is added; no need to rebuild the whole sample set.
+- **Match distance/confidence** — `Classify`/`ClassifyMultiples` return the
+  matched face's `Distance` and a normalized `Confidence` score, not just an ID.
+- **Landmarks** — detected faces carry their `Shapes` (facial landmark points).
 - **Configurable matching** — tune the distance `Tolerance` used to accept a match.
 - **CNN or HOG detector** — trade speed for accuracy with `UseCNN`.
 - **Grayscale preprocessing** — optional, via `UseGray`.
 - **Dataset persistence** — save/load known faces to/from a JSON file.
-- **Drawing helpers** — annotate the source image with boxes and labels for the faces found.
+- **Drawing helpers** — annotate the source image with boxes, labels, and
+  landmark points for the faces found.
 
 ## Requirements
 
@@ -101,7 +107,9 @@ bunzip2 mmod_human_face_detector.dat.bz2
 
 ## Examples
 
-Runnable versions of both examples below live in [`examples/`](examples/).
+Runnable versions of the examples below live in [`examples/`](examples/), one
+per subfolder. Run them from inside `examples/` so the relative `fotos`/`models`
+paths resolve, e.g. `cd examples && go run ./detection`.
 
 #### Face detection
 
@@ -203,13 +211,18 @@ func main() {
 	addFile(&rec, filepath.Join(fotosDir, "sheldon.jpg"), "Sheldon")
 	addFile(&rec, filepath.Join(fotosDir, "leonard.jpg"), "Leonard")
 
-	rec.SetSamples()
+	// No rec.SetSamples() call needed here: AddImageToDataset already
+	// keeps the classifier in sync incrementally as each face is added.
 
 	faces, err := rec.ClassifyMultiples(filepath.Join(fotosDir, "elenco3.jpg"))
 
 	if err != nil {
 		fmt.Println(err)
 		return
+	}
+
+	for _, f := range faces {
+		fmt.Printf("%s: distance=%.4f confidence=%.2f%%\n", f.Id, f.Distance, f.Confidence*100)
 	}
 
 	img, err := rec.DrawFaces(filepath.Join(fotosDir, "elenco3.jpg"), faces)
@@ -225,6 +238,60 @@ func main() {
 ```
 
 ![Face recognition result](https://leandroveronezi.github.io/go-recognizer/examples/faces.jpg)
+
+#### Face landmarks
+
+```go
+package main
+
+import (
+	"fmt"
+	"path/filepath"
+
+	face "github.com/leandroveronezi/go-face"
+	"github.com/leandroveronezi/go-recognizer"
+)
+
+const fotosDir = "fotos"
+const dataDir = "models"
+
+func main() {
+
+	rec := recognizer.Recognizer{}
+	err := rec.Init(dataDir)
+
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	rec.Tolerance = 0.4
+	rec.UseGray = true
+	rec.UseCNN = false
+	defer rec.Close()
+
+	f, err := rec.RecognizeSingle(filepath.Join(fotosDir, "amy.jpg"))
+
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	fmt.Printf("found %d landmark points\n", len(f.Shapes))
+
+	img, err := rec.DrawLandmarks(filepath.Join(fotosDir, "amy.jpg"), []face.Face{f})
+
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	rec.SaveImage("landmarks.jpg", img)
+
+}
+```
+
+![Face landmarks result](https://leandroveronezi.github.io/go-recognizer/examples/landmarks.jpg)
 
 ## Contributing
 
