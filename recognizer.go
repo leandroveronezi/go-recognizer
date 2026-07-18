@@ -36,6 +36,22 @@ type Face struct {
 }
 
 /*
+ModelFiles selects non-default model file names, all resolved relative
+to the modelDir passed to Init. Set fields before calling Init; they
+have no effect afterward, since model loading happens inside Init.
+*/
+type ModelFiles struct {
+	// Landmark is the shape predictor file name. Empty (the default)
+	// uses go-face's shape_predictor_5_face_landmarks.dat, which returns
+	// 5 landmark points (eye corners and nose base) in Face.Shapes. Set
+	// to "shape_predictor_68_face_landmarks.dat" for full facial contour
+	// landmarks (jawline, eyebrows, nose bridge, eyes, lips) instead --
+	// it's a much larger download and slightly slower per face, so only
+	// opt in if you need the extra landmark detail.
+	Landmark string
+}
+
+/*
 A Recognizer creates face descriptors for provided images and
 classifies them into categories.
 */
@@ -44,15 +60,19 @@ type Recognizer struct {
 	rec       *goFace.Recognizer
 	UseCNN    bool
 	UseGray   bool
+	// Model selects non-default model file names. Set before Init.
+	Model ModelFiles
 	// Dataset holds the known face samples. Mutate it only through
-	// AddImageToDataset/LoadDataset, and call SetSamples afterward --
-	// see SetSamples.
+	// AddImageToDataset (keeps the classifier in sync automatically) or
+	// LoadDataset (call SetSamples afterward -- see SetSamples).
 	Dataset []Data
 	mu      sync.RWMutex
 }
 
 /*
-Init initialise a recognizer interface.
+Init initialise a recognizer interface. Set Model before calling Init to
+choose non-default model files (e.g. Model.Landmark for full facial
+contour landmarks instead of the default 5 points).
 */
 func (_this *Recognizer) Init(Path string) error {
 
@@ -64,7 +84,14 @@ func (_this *Recognizer) Init(Path string) error {
 	_this.Dataset = make([]Data, 0)
 	_this.mu.Unlock()
 
-	rec, err := goFace.NewRecognizer(Path)
+	var rec *goFace.Recognizer
+	var err error
+
+	if _this.Model.Landmark != "" {
+		rec, err = goFace.NewRecognizerWithShapePredictor(Path, _this.Model.Landmark)
+	} else {
+		rec, err = goFace.NewRecognizer(Path)
+	}
 
 	if err == nil {
 		_this.rec = rec
