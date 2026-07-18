@@ -6,6 +6,7 @@ lower-level go-face API into a small, batteries-included `Recognizer` type:
 load a photo, find faces, classify them against a labeled dataset, and draw
 the results back onto the image — in a handful of method calls.
 
+[![CI](https://github.com/leandroveronezi/go-recognizer/actions/workflows/ci.yml/badge.svg)](https://github.com/leandroveronezi/go-recognizer/actions/workflows/ci.yml)
 [![Go Reference](https://pkg.go.dev/badge/github.com/leandroveronezi/go-recognizer.svg)](https://pkg.go.dev/github.com/leandroveronezi/go-recognizer)
 [![Latest tag](https://img.shields.io/github/v/tag/leandroveronezi/go-recognizer.svg)](https://github.com/leandroveronezi/go-recognizer/tags)
 ![MIT Licensed](https://img.shields.io/github/license/leandroveronezi/go-recognizer.svg)
