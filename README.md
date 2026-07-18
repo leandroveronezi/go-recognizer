@@ -93,6 +93,14 @@ Try installing dlib/libjpeg with your distribution's package manager, or
 with old dlib packages such as libdlib18. If your system isn't covered here,
 open an issue with the distribution/version and we'll try to help.
 
+### Docker
+
+[`examples/Dockerfile`](examples/Dockerfile) builds dlib from source (Alpine
+has no dlib package) and compiles the detection example against it, ending
+with a ~50MB runtime image. Useful as a reference for containerized builds,
+and for the compiler/CMake compatibility patches it applies -- dlib's
+released source doesn't build out of the box with GCC 15+ or CMake 4.x.
+
 ## Installation
 
 ```bash
