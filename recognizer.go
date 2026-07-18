@@ -9,7 +9,7 @@ import (
 	"os"
 	"sync"
 
-	goFace "github.com/Kagami/go-face"
+	goFace "github.com/leandroveronezi/go-face"
 )
 
 // Data descriptor of the human face.

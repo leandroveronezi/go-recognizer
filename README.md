@@ -4,7 +4,7 @@
 [![GoDoc](https://godoc.org/github.com/leandroveronezi/go-recognizer?status.png)](https://godoc.org/github.com/leandroveronezi/go-recognizer)
 ![MIT Licensed](https://img.shields.io/github/license/leandroveronezi/go-recognizer.svg)
 ![](https://img.shields.io/github/repo-size/leandroveronezi/go-recognizer.svg)
-[![](https://img.shields.io/badge/Require-go--face-blue.svg)](https://github.com/Kagami/go-face)
+[![](https://img.shields.io/badge/Require-go--face-blue.svg)](https://github.com/leandroveronezi/go-face)
 
 ## Requirements
 go-recognizer require go-face to compile. go-face need to have dlib (>= 19.10) and libjpeg development packages installed.

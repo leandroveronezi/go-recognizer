@@ -3,7 +3,7 @@ package recognizer
 import (
 	"crypto/rand"
 	"encoding/hex"
-	goFace "github.com/Kagami/go-face"
+	goFace "github.com/leandroveronezi/go-face"
 	"github.com/fogleman/gg"
 	"github.com/golang/freetype/truetype"
 	"golang.org/x/image/font/gofont/goregular"
