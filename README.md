@@ -204,6 +204,7 @@ func main() {
 package main
 
 import (
+	"errors"
 	"fmt"
 	"path/filepath"
 
@@ -217,9 +218,11 @@ func addFile(rec *recognizer.Recognizer, Path, Id string) {
 
 	err := rec.AddImageToDataset(Path, Id)
 
-	if err != nil {
+	switch {
+	case errors.Is(err, recognizer.ErrNoFace), errors.Is(err, recognizer.ErrNotSingleFace):
+		fmt.Printf("%s: not exactly one face, skipping\n", Path)
+	case err != nil:
 		fmt.Println(err)
-		return
 	}
 
 }

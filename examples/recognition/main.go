@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"path/filepath"
 
@@ -12,14 +13,13 @@ const dataDir = "models"
 
 func addFile(rec *recognizer.Recognizer, Path, Id string) {
 
-	// AddImageToDataset returns recognizer.ErrNoFace/ErrNotSingleFace for
-	// images that don't have exactly one face -- check with errors.Is if
-	// you need to tell those apart; here we just log whatever comes back.
 	err := rec.AddImageToDataset(Path, Id)
 
-	if err != nil {
+	switch {
+	case errors.Is(err, recognizer.ErrNoFace), errors.Is(err, recognizer.ErrNotSingleFace):
+		fmt.Printf("%s: not exactly one face, skipping\n", Path)
+	case err != nil:
 		fmt.Println(err)
-		return
 	}
 
 }
