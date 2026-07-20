@@ -12,6 +12,24 @@ import (
 	goFace "github.com/leandroveronezi/go-face"
 )
 
+// Sentinel errors for the "expected" failure conditions -- check for
+// these with errors.Is instead of matching on the error message text,
+// which isn't part of the API contract and may change.
+var (
+	// ErrNoFace is returned when an image has no detected face, where an
+	// operation requires at least one.
+	ErrNoFace = errors.New("not a face on the image")
+	// ErrNotSingleFace is returned when an image doesn't have exactly
+	// one detected face, where an operation requires exactly one.
+	ErrNotSingleFace = errors.New("not a single face on the image")
+	// ErrNoMatch is returned by Identify when the descriptor doesn't
+	// match any Dataset entry within Tolerance.
+	ErrNoMatch = errors.New("can't identify")
+	// ErrDatasetFileNotFound is returned by LoadDataset when Path
+	// doesn't exist.
+	ErrDatasetFileNotFound = errors.New("file not found")
+)
+
 // Data descriptor of the human face.
 type Data struct {
 	Id         string
@@ -27,11 +45,11 @@ type Face struct {
 	Shapes []image.Point
 	// Distance is the squared Euclidean distance between this face's
 	// descriptor and the matched Dataset entry's descriptor. Only set by
-	// Classify/ClassifyMultiples; zero otherwise.
+	// Identify/IdentifyMultiples; zero otherwise.
 	Distance float64
 	// Confidence is a convenience score in [0,1], normalized as
 	// 1-Distance/Tolerance -- not a calibrated probability. Only set by
-	// Classify/ClassifyMultiples; zero otherwise.
+	// Identify/IdentifyMultiples; zero otherwise.
 	Confidence float64
 }
 
@@ -143,6 +161,9 @@ func (_this *Recognizer) detect(Path string) ([]goFace.Face, error) {
 /*
 AddImageToDataset add a sample image to the dataset.
 
+Returns ErrNoFace if the image has no detected face, or ErrNotSingleFace
+if it has more than one -- check with errors.Is.
+
 The new entry is appended to the underlying classifier immediately (via
 goFace.AppendSample), so it's classifiable right away -- no need to call
 SetSamples afterward. SetSamples is still required after LoadDataset or
@@ -158,11 +179,11 @@ func (_this *Recognizer) AddImageToDataset(Path string, Id string) error {
 	}
 
 	if len(faces) == 0 {
-		return errors.New("Not a face on the image")
+		return ErrNoFace
 	}
 
 	if len(faces) > 1 {
-		return errors.New("Not a single face on the image")
+		return ErrNotSingleFace
 	}
 
 	f := Data{}
@@ -207,7 +228,8 @@ func (_this *Recognizer) SetSamples() {
 }
 
 /*
-RecognizeSingle returns face if it's the only face on the image or nil otherwise.
+RecognizeSingle returns the face on the image, or ErrNotSingleFace if it
+doesn't have exactly one -- check with errors.Is.
 */
 func (_this *Recognizer) RecognizeSingle(Path string) (goFace.Face, error) {
 
@@ -218,7 +240,7 @@ func (_this *Recognizer) RecognizeSingle(Path string) (goFace.Face, error) {
 
 		pixels, width, height, lerr := _this.loadPixels(Path)
 		if lerr != nil {
-			return goFace.Face{}, lerr
+			return goFace.Face{}, fmt.Errorf("can't recognize: %w", lerr)
 		}
 
 		if _this.UseCNN {
@@ -238,11 +260,11 @@ func (_this *Recognizer) RecognizeSingle(Path string) (goFace.Face, error) {
 	}
 
 	if err != nil {
-		return goFace.Face{}, fmt.Errorf("Can't recognize: %v", err)
+		return goFace.Face{}, fmt.Errorf("can't recognize: %w", err)
 
 	}
 	if idFace == nil {
-		return goFace.Face{}, fmt.Errorf("Not a single face on the image")
+		return goFace.Face{}, ErrNotSingleFace
 	}
 
 	return *idFace, nil
@@ -259,7 +281,7 @@ func (_this *Recognizer) RecognizeMultiples(Path string) ([]goFace.Face, error) 
 	idFaces, err := _this.detect(Path)
 
 	if err != nil {
-		return nil, fmt.Errorf("Can't recognize: %v", err)
+		return nil, fmt.Errorf("can't recognize: %w", err)
 	}
 
 	return idFaces, nil
@@ -267,12 +289,16 @@ func (_this *Recognizer) RecognizeMultiples(Path string) ([]goFace.Face, error) 
 }
 
 /*
-Classify returns all faces identified in the image. Empty list is returned if no match.
+Identify returns the single face identified in the image.
+
+Returns ErrNotSingleFace if the image doesn't have exactly one face, or
+ErrNoMatch if the face doesn't match any Dataset entry within Tolerance
+-- check with errors.Is.
 
 Matches against the sample set from the most recent SetSamples call, not
 necessarily the current Dataset -- see SetSamples.
 */
-func (_this *Recognizer) Classify(Path string) ([]Face, error) {
+func (_this *Recognizer) Identify(Path string) ([]Face, error) {
 
 	face, err := _this.RecognizeSingle(Path)
 
@@ -280,16 +306,16 @@ func (_this *Recognizer) Classify(Path string) ([]Face, error) {
 		return nil, err
 	}
 
-	personID := _this.rec.ClassifyThreshold(face.Descriptor, _this.Tolerance)
+	personID := _this.rec.IdentifyThreshold(face.Descriptor, _this.Tolerance)
 	if personID < 0 {
-		return nil, fmt.Errorf("Can't classify")
+		return nil, ErrNoMatch
 	}
 
 	_this.mu.RLock()
 	defer _this.mu.RUnlock()
 
 	if personID >= len(_this.Dataset) {
-		return nil, fmt.Errorf("Can't classify")
+		return nil, ErrNoMatch
 	}
 
 	matched := _this.Dataset[personID]
@@ -310,24 +336,26 @@ func (_this *Recognizer) Classify(Path string) ([]Face, error) {
 }
 
 /*
-ClassifyMultiples returns all faces identified in the image. Empty list is returned if no match.
+IdentifyMultiples returns every face identified in the image. Faces with
+no Dataset entry within Tolerance are skipped -- an empty slice (not an
+error) is returned if none matched.
 
 Matches against the sample set from the most recent SetSamples call, not
 necessarily the current Dataset -- see SetSamples.
 */
-func (_this *Recognizer) ClassifyMultiples(Path string) ([]Face, error) {
+func (_this *Recognizer) IdentifyMultiples(Path string) ([]Face, error) {
 
 	faces, err := _this.RecognizeMultiples(Path)
 
 	if err != nil {
-		return nil, fmt.Errorf("Can't recognize: %v", err)
+		return nil, err
 	}
 
 	facesRec := make([]Face, 0)
 
 	for _, f := range faces {
 
-		personID := _this.rec.ClassifyThreshold(f.Descriptor, _this.Tolerance)
+		personID := _this.rec.IdentifyThreshold(f.Descriptor, _this.Tolerance)
 		if personID < 0 {
 			continue
 		}

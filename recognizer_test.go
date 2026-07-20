@@ -1,6 +1,8 @@
 package recognizer
 
 import (
+	"errors"
+	"image"
 	"image/jpeg"
 	"image/png"
 	"os"
@@ -175,6 +177,41 @@ func TestAddImageToDatasetRejectsPNGWithoutUseGray(t *testing.T) {
 	}
 }
 
+func TestAddImageToDatasetNoFace(t *testing.T) {
+	blankPath := filepath.Join(t.TempDir(), "blank.jpg")
+	writeBlankJPEG(t, blankPath)
+
+	rec := newTestRecognizer(t)
+	if err := rec.AddImageToDataset(blankPath, "NoOne"); !errors.Is(err, ErrNoFace) {
+		t.Fatalf("AddImageToDataset(blank): err = %v, want ErrNoFace", err)
+	}
+}
+
+func TestAddImageToDatasetRejectsMultipleFaces(t *testing.T) {
+	rec := newTestRecognizer(t)
+
+	if err := rec.AddImageToDataset(filepath.Join(testFotosDir, "elenco3.jpg"), "Group"); !errors.Is(err, ErrNotSingleFace) {
+		t.Fatalf("AddImageToDataset(elenco3): err = %v, want ErrNotSingleFace", err)
+	}
+}
+
+// writeBlankJPEG writes a solid-color JPEG with no detectable face to path.
+func writeBlankJPEG(t *testing.T, path string) {
+	t.Helper()
+
+	img := image.NewRGBA(image.Rect(0, 0, 32, 32))
+
+	f, err := os.Create(path)
+	if err != nil {
+		t.Fatalf("Create(%s): %v", path, err)
+	}
+	defer f.Close()
+
+	if err := jpeg.Encode(f, img, nil); err != nil {
+		t.Fatalf("jpeg.Encode: %v", err)
+	}
+}
+
 func convertJPEGToPNG(t *testing.T, jpegPath, pngPath string) {
 	t.Helper()
 
@@ -217,8 +254,8 @@ func TestRecognizeSingleRejectsMultipleFaces(t *testing.T) {
 	rec := newTestRecognizer(t)
 
 	_, err := rec.RecognizeSingle(filepath.Join(testFotosDir, "elenco3.jpg"))
-	if err == nil {
-		t.Fatalf("RecognizeSingle: expected an error for a multi-face image, got nil")
+	if !errors.Is(err, ErrNotSingleFace) {
+		t.Fatalf("RecognizeSingle: err = %v, want ErrNotSingleFace", err)
 	}
 }
 
@@ -250,9 +287,9 @@ func TestAddImageToDatasetIsClassifiableWithoutSetSamples(t *testing.T) {
 	}
 
 	// Deliberately not calling rec.SetSamples() here.
-	faces, err := rec.ClassifyMultiples(filepath.Join(testFotosDir, "elenco3.jpg"))
+	faces, err := rec.IdentifyMultiples(filepath.Join(testFotosDir, "elenco3.jpg"))
 	if err != nil {
-		t.Fatalf("ClassifyMultiples: %v", err)
+		t.Fatalf("IdentifyMultiples: %v", err)
 	}
 
 	got := make(map[string]bool)
@@ -277,7 +314,7 @@ func TestAddImageToDatasetIsClassifiableWithoutSetSamples(t *testing.T) {
 	}
 }
 
-func TestClassifyConfidenceOfExactMatch(t *testing.T) {
+func TestIdentifyConfidenceOfExactMatch(t *testing.T) {
 	rec := newTestRecognizer(t)
 	rec.Tolerance = 0.4
 
@@ -285,9 +322,9 @@ func TestClassifyConfidenceOfExactMatch(t *testing.T) {
 		t.Fatalf("AddImageToDataset: %v", err)
 	}
 
-	faces, err := rec.Classify(filepath.Join(testFotosDir, "amy.jpg"))
+	faces, err := rec.Identify(filepath.Join(testFotosDir, "amy.jpg"))
 	if err != nil {
-		t.Fatalf("Classify: %v", err)
+		t.Fatalf("Identify: %v", err)
 	}
 	if len(faces) != 1 {
 		t.Fatalf("got %d faces, want 1", len(faces))
@@ -307,7 +344,7 @@ func TestClassifyConfidenceOfExactMatch(t *testing.T) {
 	}
 }
 
-func TestClassifyNoMatch(t *testing.T) {
+func TestIdentifyNoMatch(t *testing.T) {
 	rec := newTestRecognizer(t)
 	rec.Tolerance = 0.4
 
@@ -317,9 +354,9 @@ func TestClassifyNoMatch(t *testing.T) {
 
 	// Raj isn't in the dataset, so classification against a lone photo of
 	// him should find no match.
-	_, err := rec.Classify(filepath.Join(testFotosDir, "raj.jpg"))
-	if err == nil {
-		t.Fatalf("Classify: expected an error for an unknown face, got nil")
+	_, err := rec.Identify(filepath.Join(testFotosDir, "raj.jpg"))
+	if !errors.Is(err, ErrNoMatch) {
+		t.Fatalf("Identify: err = %v, want ErrNoMatch", err)
 	}
 }
 
@@ -365,14 +402,14 @@ func TestLoadDatasetMissingFile(t *testing.T) {
 	rec := newTestRecognizer(t)
 
 	err := rec.LoadDataset(filepath.Join(t.TempDir(), "does-not-exist.json"))
-	if err == nil {
-		t.Fatalf("LoadDataset: expected an error for a missing file, got nil")
+	if !errors.Is(err, ErrDatasetFileNotFound) {
+		t.Fatalf("LoadDataset: err = %v, want ErrDatasetFileNotFound", err)
 	}
 }
 
-// TestConcurrentAddAndClassify exercises the sync.RWMutex added around
+// TestConcurrentAddAndIdentify exercises the sync.RWMutex added around
 // Dataset: run with `go test -race` to catch any regression.
-func TestConcurrentAddAndClassify(t *testing.T) {
+func TestConcurrentAddAndIdentify(t *testing.T) {
 	rec := newTestRecognizer(t)
 	rec.Tolerance = 0.4
 
@@ -399,7 +436,7 @@ func TestConcurrentAddAndClassify(t *testing.T) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			_, _ = rec.ClassifyMultiples(filepath.Join(testFotosDir, "elenco3.jpg"))
+			_, _ = rec.IdentifyMultiples(filepath.Join(testFotosDir, "elenco3.jpg"))
 			_ = rec.SaveDataset(filepath.Join(t.TempDir(), "dataset.json"))
 		}()
 	}

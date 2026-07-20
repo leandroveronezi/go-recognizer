@@ -12,6 +12,9 @@ const dataDir = "models"
 
 func addFile(rec *recognizer.Recognizer, Path, Id string) {
 
+	// AddImageToDataset returns recognizer.ErrNoFace/ErrNotSingleFace for
+	// images that don't have exactly one face -- check with errors.Is if
+	// you need to tell those apart; here we just log whatever comes back.
 	err := rec.AddImageToDataset(Path, Id)
 
 	if err != nil {
@@ -47,7 +50,7 @@ func main() {
 	// No rec.SetSamples() call needed here: AddImageToDataset already
 	// keeps the classifier in sync incrementally as each face is added.
 
-	faces, err := rec.ClassifyMultiples(filepath.Join(fotosDir, "elenco3.jpg"))
+	faces, err := rec.IdentifyMultiples(filepath.Join(fotosDir, "elenco3.jpg"))
 
 	if err != nil {
 		fmt.Println(err)

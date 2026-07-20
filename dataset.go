@@ -2,7 +2,6 @@ package recognizer
 
 import (
 	"encoding/json"
-	"errors"
 	"os"
 )
 
@@ -32,14 +31,17 @@ func (_this *Recognizer) SaveDataset(Path string) error {
 /*
 LoadDataset loads the data from the json file into the Dataset.
 
-Call SetSamples afterward: as with AddImageToDataset, Classify and
-ClassifyMultiples won't see the loaded entries until SetSamples runs
+Returns ErrDatasetFileNotFound if Path doesn't exist -- check with
+errors.Is.
+
+Call SetSamples afterward: as with AddImageToDataset, Identify and
+IdentifyMultiples won't see the loaded entries until SetSamples runs
 again.
 */
 func (_this *Recognizer) LoadDataset(Path string) error {
 
 	if !fileExists(Path) {
-		return errors.New("file not found")
+		return ErrDatasetFileNotFound
 	}
 
 	file, err := os.Open(Path)

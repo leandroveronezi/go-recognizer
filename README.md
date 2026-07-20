@@ -3,7 +3,7 @@
 Face detection and recognition for Go, built on top of [dlib](http://dlib.net)
 via [go-face](https://github.com/leandroveronezi/go-face). It wraps the
 lower-level go-face API into a small, batteries-included `Recognizer` type:
-load a photo, find faces, classify them against a labeled dataset, and draw
+load a photo, find faces, identify them against a labeled dataset, and draw
 the results back onto the image — in a handful of method calls.
 
 [![CI](https://github.com/leandroveronezi/go-recognizer/actions/workflows/ci.yml/badge.svg)](https://github.com/leandroveronezi/go-recognizer/actions/workflows/ci.yml)
@@ -15,10 +15,10 @@ the results back onto the image — in a handful of method calls.
 ## Features
 
 - **Detection** — find one or many faces in an image, sorted left to right.
-- **Recognition** — classify detected faces against a dataset of known people.
-- **Incremental dataset updates** — `AddImageToDataset` keeps the classifier in
+- **Recognition** — identify detected faces against a dataset of known people.
+- **Incremental dataset updates** — `AddImageToDataset` keeps the identifier in
   sync as each face is added; no need to rebuild the whole sample set.
-- **Match distance/confidence** — `Classify`/`ClassifyMultiples` return the
+- **Match distance/confidence** — `Identify`/`IdentifyMultiples` return the
   matched face's `Distance` and a normalized `Confidence` score, not just an ID.
 - **Landmarks** — detected faces carry their `Shapes` (facial landmark
   points). Defaults to 5 points (eye corners, nose base); set
@@ -40,6 +40,10 @@ the results back onto the image — in a handful of method calls.
 - **Dataset persistence** — save/load known faces to/from a JSON file.
 - **Drawing helpers** — annotate the source image with boxes, labels, and
   landmark points for the faces found.
+- **Typed errors** — `AddImageToDataset`/`RecognizeSingle`/`Identify`/
+  `LoadDataset` return sentinel errors (`ErrNoFace`, `ErrNotSingleFace`,
+  `ErrNoMatch`, `ErrDatasetFileNotFound`) checkable with `errors.Is`,
+  instead of matching on error text. See [Errors](#errors) below.
 
 ## Requirements
 
@@ -244,9 +248,9 @@ func main() {
 	addFile(&rec, filepath.Join(fotosDir, "leonard.jpg"), "Leonard")
 
 	// No rec.SetSamples() call needed here: AddImageToDataset already
-	// keeps the classifier in sync incrementally as each face is added.
+	// keeps the identifier in sync incrementally as each face is added.
 
-	faces, err := rec.ClassifyMultiples(filepath.Join(fotosDir, "elenco3.jpg"))
+	faces, err := rec.IdentifyMultiples(filepath.Join(fotosDir, "elenco3.jpg"))
 
 	if err != nil {
 		fmt.Println(err)
@@ -339,6 +343,36 @@ err := rec.Init(dataDir)
 face-descriptor (ResNet) and CNN detector model files respectively —
 useful if you're using differently-named or fine-tuned dlib models. All
 three must be set before calling `Init`; they're read once, at load time.
+
+## Errors
+
+The "expected" failure conditions -- no face detected, more than one
+face detected, no dataset match, a missing dataset file -- are exposed
+as sentinel errors, so callers can branch on them with `errors.Is`
+instead of matching on the error message text (which isn't part of the
+API contract and may change):
+
+```go
+faces, err := rec.Identify(path)
+switch {
+case errors.Is(err, recognizer.ErrNotSingleFace):
+	// the image doesn't have exactly one face
+case errors.Is(err, recognizer.ErrNoMatch):
+	// no Dataset entry within Tolerance
+case err != nil:
+	// something else went wrong (I/O, decode, ...)
+}
+```
+
+| Error | Returned by |
+|-------|-------------|
+| `ErrNoFace` | `AddImageToDataset`, when the image has no detected face |
+| `ErrNotSingleFace` | `AddImageToDataset`, `RecognizeSingle`, `Identify`, when the image has more than one detected face (or, for `RecognizeSingle`/`Identify`, doesn't have exactly one) |
+| `ErrNoMatch` | `Identify`, when the face doesn't match any `Dataset` entry within `Tolerance` |
+| `ErrDatasetFileNotFound` | `LoadDataset`, when `Path` doesn't exist |
+
+Any other error (I/O, image decoding, etc.) is wrapped with `%w`, so
+`errors.Unwrap`/`errors.As` still reach the underlying cause.
 
 ## Contributing
 
