@@ -284,6 +284,7 @@ func main() {
 package main
 
 import (
+	"errors"
 	"fmt"
 	"path/filepath"
 
@@ -311,7 +312,11 @@ func main() {
 
 	f, err := rec.RecognizeSingle(filepath.Join(fotosDir, "amy.jpg"))
 
-	if err != nil {
+	switch {
+	case errors.Is(err, recognizer.ErrNotSingleFace):
+		fmt.Println("amy.jpg doesn't have exactly one face")
+		return
+	case err != nil:
 		fmt.Println(err)
 		return
 	}
