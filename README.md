@@ -12,6 +12,11 @@ the results back onto the image — in a handful of method calls.
 ![MIT Licensed](https://img.shields.io/github/license/leandroveronezi/go-recognizer.svg)
 [![](https://img.shields.io/badge/Require-go--face-blue.svg)](https://github.com/leandroveronezi/go-face)
 
+dlib's underlying face pipeline predates most of the last decade's face
+recognition research (see go-face's README for specifics). For
+actively-developed, modern models instead, see
+[go-onnxface](https://github.com/leandroveronezi/go-onnxface).
+
 ## Features
 
 - **Detection** — find one or many faces in an image, sorted left to right.
