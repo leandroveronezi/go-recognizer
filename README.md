@@ -12,9 +12,12 @@ the results back onto the image — in a handful of method calls.
 ![MIT Licensed](https://img.shields.io/github/license/leandroveronezi/go-recognizer.svg)
 [![](https://img.shields.io/badge/Require-go--face-blue.svg)](https://github.com/leandroveronezi/go-face)
 
-dlib's underlying face pipeline predates most of the last decade's face
-recognition research (see go-face's README for specifics). For
-actively-developed, modern models instead, see
+dlib's face pipeline (shape-predictor landmarks + a custom ResNet-29
+metric-learning descriptor) predates most of the last decade's face
+recognition research -- even the newest dlib-compatible alternatives
+(2021/2024) are incremental tweaks to that same older approach, not a
+leap to what's state of the art today. For actively-developed, modern
+models (YuNet, RetinaFace, ArcFace-family, SFace, GhostFaceNet...), see
 [go-onnxface](https://github.com/leandroveronezi/go-onnxface).
 
 ## Features
